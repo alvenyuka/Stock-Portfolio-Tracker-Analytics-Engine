@@ -64,7 +64,9 @@ This project is a professional‑grade stock portfolio tracking system built ent
 
 ## Dashboard Preview
 
-![Stock Dashboard](StockDashboard.png)
+<img width="1353" height="633" alt="MainDashboard" src="https://github.com/user-attachments/assets/85eec1cb-5b08-44a0-92cb-70b7351214ae" />
+<img width="539" height="679" alt="WatchlistDashboard" src="https://github.com/user-attachments/assets/121eb15c-29e2-4278-8df0-90d8bb6d4608" />
+
 
 The dashboard includes:
 - **Portfolio Value** – total market value, cost basis, unrealised P&L, total return, and 7‑year CAGR.
