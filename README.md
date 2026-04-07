@@ -1,116 +1,88 @@
 # Stock Portfolio Tracker & Analytics Engine
 
-**A comprehensive Excel‑based financial analytics platform for multi‑asset portfolio management**
-
-This project is a professional‑grade stock portfolio tracking system built entirely in Microsoft Excel. It integrates live market data, advanced Excel formulas (dynamic arrays, `STOCKHISTORY`, linked data types), and CFA‑level risk analytics to provide real‑time portfolio monitoring, risk decomposition, factor exposure, and performance reporting.
-
----
-
-## Key Features
-
-- **Live Portfolio Dashboard** – KPI cards, daily P&L, sparkline trends, and real‑time stock prices via Excel’s Stocks data type.
-- **Transaction Ledger** – 112 buy/sell records across 16 stocks over 7 years, automatically feeding all analytics.
-- **Advanced Financial Metrics** – CAGR, total return, unrealised gains/losses, sector concentration (HHI Index), and risk flags.
-- **Automated Allocation** – $10,000 annual investment with sector caps (Tech max 35%) and systematic rebalancing.
-- **Comprehensive Risk Analytics** – CAPM, Jensen’s Alpha, Beta, Sharpe & Treynor ratios, Sortino ratio, Calmar ratio, Value‑at‑Risk (parametric/historical/Monte Carlo), Expected Shortfall (CVaR), M² measure, and factor exposure (growth/value tilt).
-- **Watchlist Scoring Model** – Multi‑factor ranking (P/E, Beta, 52‑week range) with composite scores and buy/watch/avoid signals.
-- **Automated Validation Suite** – 16+ CFA‑grade integrity tests (weight summation, HHI consistency, cross‑sheet checks) with real‑time pass/fail status.
-- **Dynamic Data Integration** – Uses Excel’s `STOCKHISTORY` for price series, linked data types for live market data, and dynamic arrays (`SORT`, `UNIQUE`, `FILTER`) for automatic data propagation.
-
----
-
-## Skills Demonstrated
-
-| Category | Skills |
-|----------|--------|
-| **Financial Modelling** | Portfolio construction, P&L tracking, CAGR analysis, risk‑adjusted metrics, sector allocation, CAPM, VaR, factor decomposition |
-| **Risk Analysis** | HHI concentration index, drawdown analysis, position sizing, diversification metrics, beta decomposition, downside deviation, CVaR |
-| **Data Engineering** | Dynamic arrays, linked data types, structured references, cross‑sheet data pipelines, `STOCKHISTORY` for historical series |
-| **Dashboard Design** | KPI cards, conditional formatting, sparklines, interactive charts, professional colour themes, icon‑based alerts (🔻 TRIM / 🔺 ADD) |
-| **Data Visualisation** | Pie charts, bar charts, sparklines, colour‑coded tables, trend analysis, 52‑week range heatmaps |
-| **Quality Assurance** | Automated validation framework, consistency checks, reasonableness tests, CFA‑grade audit framework |
-| **Domain Knowledge** | GICS sector classification, stock market mechanics, Buy/Sell transaction modelling, CAPM equilibrium, factor tilts |
-
----
-
-## Workbook Structure
-
-| Sheet Name | Description |
-|------------|-------------|
-| **README** | Project overview, structure, and usage instructions. |
-| **Dashboard** | Main portfolio view – live stock prices, market values, daily P&L, sparkline charts, KPI summary cards, sector allocation, rebalancing analysis. |
-| **Analytics** | Deeper metrics: per‑stock returns, CAGR, sector concentration (HHI Index), risk flags, allocation charts, portfolio health scorecard. |
-| **Risk Analytics** | CFA‑level quantitative risk decomposition – CAPM, beta, alpha, Sharpe/Treynor/Sortino ratios, VaR (parametric), CVaR, M², Calmar, factor exposure (growth/value tilt), capital market line analysis. |
-| **WL Dashboard** | Watchlist scoring model – multi‑factor ranking (P/E, Beta, 52‑week range %) with composite scores, buy/watch/avoid signals, momentum indicators. |
-| **Watchlist** | Competitor analysis – 10 rival stocks with live data, 52‑week ranges, beta, P/E, market cap, industry. |
-| **Ledger** | Complete transaction history – 112 records over 7 years with date, stock, type, price, units, amount. |
-| **Sparkline** | Price history data feeding dashboard sparkline trend visualizations. |
-| **Validation** | Automated integrity tests – 16+ CFA‑grade checks (weights, HHI consistency, risk metric reasonableness, cross‑sheet consistency). |
-| **Stock Sheets** | Individual stock deep‑dives with `STOCKHISTORY` price series and charts (AMD, BABA, BAC, COST, DELL, XOM, GM, LMT, MSFT, GS). |
-
----
-
-## How to Use
-
-1. **Enable Data Types** – Ensure Excel is connected to the internet. The Stocks linked data types require a Microsoft 365 subscription.
-2. **Review Dashboard** – The Dashboard auto‑updates with live prices. Check KPI cards for portfolio summary, stock table for details, and sector breakdown below.
-3. **Explore Analytics** – The Analytics sheet provides per‑stock returns, sector HHI, risk flags, and allocation charts.
-4. **Run Risk Analytics** – The Risk Analytics sheet offers CAPM decomposition, VaR estimates, factor exposures, and portfolio efficiency metrics.
-5. **Monitor Watchlist** – Track competitor stocks with live data. The WL Dashboard scores each stock and generates buy/watch/avoid signals.
-6. **Validate Model** – The Validation sheet runs 16+ automated tests to ensure data integrity and cross‑sheet consistency. All tests should show “PASS”.
-7. **Add Transactions** – Add new rows to the Ledger table. All Dashboard, Analytics, and Risk Analytics formulas auto‑update via structured references.
+**An institutional-grade Excel-based portfolio analytics platform — 16 stocks · 10 industries · 7 years · CFA Level I–III methodology**
 
 ---
 
 ## Dashboard Preview
 
-<img width="1353" height="633" alt="MainDashboard" src="https://github.com/user-attachments/assets/85eec1cb-5b08-44a0-92cb-70b7351214ae" />
-<img width="539" height="679" alt="WatchlistDashboard" src="https://github.com/user-attachments/assets/121eb15c-29e2-4278-8df0-90d8bb6d4608" />
+### Main Portfolio Dashboard
+![Main Dashboard](MainDashboard.png)
 
-
-The dashboard includes:
-- **Portfolio Value** – total market value, cost basis, unrealised P&L, total return, and 7‑year CAGR.
-- **Holdings Table** – live prices, daily change, gain/loss, weight, return %, risk score, and trade signal (▲ STRONG / ▶ HOLD / ▼ REVIEW).
-- **Sector Allocation** – market value by industry with HHI contributions to quantify concentration risk.
-- **Rebalancing Analysis** – current weight vs. equal weight, deviation, and suggested action (🔻 TRIM / 🔺 ADD / ✔ OK).
-- **Risk Metrics** – Sharpe ratio, win rate, max drawdown, portfolio beta, Treynor ratio, profit factor, Sortino ratio, Calmar ratio, and overall portfolio grade.
+### Watchlist & Competitor Analysis
+![Watchlist Dashboard](WatchlistDashboard.png)
 
 ---
 
-## Advanced Techniques Used
+## Project Overview
 
-- **Dynamic Arrays** – `SORT`, `UNIQUE`, `FILTER`, `SORTBY` with spill ranges for automatic data propagation.
-- **Linked Data Types** – Excel Stocks data type with dot notation for real‑time market data integration.
-- **STOCKHISTORY** – Historical price series retrieval for sparklines and stock analysis sheets.
-- **SUMIF / COUNTIF** – Cross‑sheet aggregation for transaction totals and sector‑level rollups from the Ledger.
-- **INDEX / MATCH** – Best and worst performer identification with dynamic lookups across spill ranges.
-- **CAGR Formula** – Annualised return: `(Ending Value / Beginning Value) ^ (1 / Years) - 1`.
-- **HHI Index** – Sum of squared sector weights to quantify portfolio concentration risk.
-- **CAPM & Alpha** – `E(Rp) = Rf + βp(Rm‑Rf)` and Jensen’s Alpha for performance attribution.
-- **Value‑at‑Risk (VaR)** – Parametric VaR (95% & 99%), Expected Shortfall (CVaR), downside deviation.
-- **Risk‑Adjusted Ratios** – Sharpe, Treynor, Sortino, Calmar, M², Information Ratio.
-- **Factor Exposure** – Growth/value tilt identification, weighted average beta, active share proxy.
-- **Conditional Formatting** – Automated colour coding for negative/positive values with emoji risk indicators.
-- **Allocation Model** – Weighted allocation with sector caps (Tech max 35%) and systematic Buy/Sell rules.
-- **Validation Framework** – 16+ automated tests including weight summation, HHI consistency, CAPM identity, cross‑sheet metric alignment, and reasonableness checks.
+This workbook is a production-quality stock portfolio analytics system built entirely in **Microsoft Excel 365**. It demonstrates mastery of quantitative finance, risk management, and portfolio optimization — spanning CFA Level I–III curriculum concepts from CAPM and factor attribution through to Black-Litterman optimization, Cornish-Fisher VaR, and tax-aware rebalancing.
+
+| Metric | Value |
+|---|---|
+| **Portfolio Value** | $303,680 |
+| **Cost Basis** | $132,051 |
+| **Total Return** | 129.97% |
+| **7-Year CAGR** | 14.89% |
+| **Sharpe Ratio** | 0.47 |
+| **Sortino Ratio** | 3.10 |
+| **Portfolio Beta** | 1.47 |
+| **Portfolio Grade** | B+ |
+
+---
+
+## Key Features
+
+- **Live Portfolio Dashboard** — KPI cards, daily P&L, sparkline trends, and real-time stock prices via Excel Stocks linked data type
+- **Transaction Ledger** — 112 buy/sell records across 16 stocks over 7 years, feeding all analytics automatically
+- **Advanced Financial Metrics** — CAGR, total return, unrealised gains/losses, sector concentration (HHI Index), and risk flags
+- **Automated Allocation** — $10,000 annual investment with sector caps (Tech max 35%) and systematic rebalancing
+- **Comprehensive Risk Analytics** — CAPM, Jensen's Alpha, Beta, Sharpe/Treynor/Sortino/Calmar ratios, VaR (parametric/historical/Monte Carlo), CVaR, and factor exposure
+- **Watchlist Scoring Model** — Multi-factor ranking (P/E, Beta, 52-week range) with composite scores and buy/watch/avoid signals
+- **Black-Litterman Optimization** — Bayesian framework combining market equilibrium priors with investor views and optimal weights
+- **Automated Validation Suite** — 23 integrity tests with real-time pass/fail status
+- **Tax-Aware Ledger** — MAXIFS lot matching, ST/LT classification per IRS Section 1222
+- **Dynamic Data Integration** — STOCKHISTORY, linked data types, dynamic arrays (SORT, UNIQUE, FILTER)
+
+---
+
+## Workbook Structure
+
+| Sheet | Description |
+|---|---|
+| **Dashboard** | Primary view — dual-row KPI strip, live 16-stock table, sector allocation, volatility-scaled rebalancing, 3 embedded charts |
+| **Analytics** | Per-stock CAGR, return attribution, cost basis breakdown, risk scores |
+| **Risk Analytics** | CAPM, VaR, CVaR, drawdown analysis, stress testing, factor exposure, Capital Market Line |
+| **WL Dashboard** | Watchlist scoring model with composite signals |
+| **Watchlist** | 10 competitor stocks with live data, 52-week ranges, beta, P/E, market cap |
+| **Optimization** | Black-Litterman optimization with investor view panel and BUY/SELL/HOLD trade list |
+| **Ledger** | 112 transaction records with holding period and LT/ST tax status |
+| **Validation** | 23 automated CFA-grade integrity tests — all PASS |
+| **Skills Matrix** | 30 quantitative finance skills mapped to CFA Level I-III |
+| **Sparkline** | Price history for dashboard sparklines |
+| **Stock Sheets** | Individual deep-dives: AMD, BABA, BAC, COST, DELL, XOM, GM, LMT, MSFT, GS |
+
+---
+
+## How to Use
+
+1. Open in **Microsoft Excel 365** with an internet connection
+2. Click **Data > Refresh All** to pull live prices, beta, P/E, and market cap
+3. Review the Dashboard for portfolio summary and KPI cards
+4. Add new transactions to the Ledger — all sheets auto-update
+5. Enter investor views in the Optimization sheet for Black-Litterman weights
+6. Check Validation sheet — all 23 tests should show PASS
 
 ---
 
 ## Built With
 
-- **Microsoft Excel 365** – Dynamic Arrays, Stocks Data Type, Advanced Formulas
-- **Data Sources** – Excel Linked Data Types (Stocks), `STOCKHISTORY` function, historical closing prices from Nasdaq/Yahoo Finance
+**Microsoft Excel 365** — Dynamic Arrays, Stocks Data Type, STOCKHISTORY, Advanced Formulas. No VBA, no macros.
 
 ---
 
-## License & Acknowledgements
+## License
 
-This project was developed as a personal portfolio piece to demonstrate proficiency in financial analytics, data engineering, dashboard design, and quantitative risk modelling. It is provided “as is” for educational purposes.
+MIT — provided for educational and portfolio demonstration purposes.
 
-Feel free to use, modify, and share it for non‑commercial purposes. For any questions or suggestions, please open an issue in this repository.
-
----
-
-**Author:** Alven Yuka  
-**Version:** 1.0  
-**Last Updated:** 25th March 2026
+**Author:** Alven Yuka | **Version:** 2.0 | **Updated:** April 2026
