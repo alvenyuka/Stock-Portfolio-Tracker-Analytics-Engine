@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Excel 365](https://img.shields.io/badge/Excel-365-217346?logo=microsoftexcel&logoColor=white)](https://www.microsoft.com/en-us/microsoft-365/excel)
-[![Validation](https://img.shields.io/badge/validation-23%20checks%20required-success)](#validation)
+[![Validation](https://img.shields.io/badge/validation-23%20checks%20required-success)](#validation-harness)
 [![Portfolio Grade](https://img.shields.io/badge/portfolio%20grade-B%2B-blue)](#portfolio-snapshot)
 [![CAGR](https://img.shields.io/badge/7yr%20CAGR-14.89%25-brightgreen)](#portfolio-snapshot)
 
@@ -48,26 +48,6 @@ Most retail portfolio trackers stop at total return and a pie chart. The risk-ad
 | Math | Native Excel functions only — no VBA, no macros, no add-ins |
 | Optimisation | Black–Litterman (closed-form, in-sheet) |
 
-## Sheet structure
-
-| Sheet | Purpose |
-|---|---|
-| **Dashboard** | KPI strip, live 16-stock table, sector allocation, rebalancing panel, embedded charts |
-| **Analytics** | Per-stock CAGR, return attribution, cost-basis breakdown, risk scores |
-| **Risk Analytics** | CAPM, VaR, CVaR, drawdown, stress tests, factor exposure, Capital Market Line |
-| **WL Dashboard** | Watchlist composite scoring with buy / watch / avoid signals |
-| **Watchlist** | 10 competitor stocks with live data, 52-week ranges, β, P/E, market cap |
-| **Optimization** | Black–Litterman panel with investor views and trade list |
-| **Ledger** | 112 transaction records with holding period and LT/ST tax status |
-| **Validation** | 23 automated integrity tests; all required `PASS` for dashboard render |
-| **Skills Matrix** | Quantitative finance concepts the workbook exercises |
-| **Sparkline** | Price history feeding the dashboard sparklines |
-| **Stock Sheets** | Individual deep-dives per holding |
-
-![Stock-level deep-dive sheet — price history, return decomposition, risk score](StockDashboard.png)
-
-![Watchlist composite scoring with buy / watch / avoid output](WatchlistDashboard.png)
-
 ## Installation
 
 No installation. Download `Stock Portfolio.xlsx` and open in Microsoft Excel 365 with an internet connection.
@@ -86,7 +66,39 @@ cd Stock-Portfolio-Tracker-Analytics-Engine
 4. Enter market views on the **Optimization** sheet for revised Black–Litterman weights.
 5. Check the **Validation** sheet — all 23 tests must read `PASS`.
 
-## Validation
+## Sheet structure
+
+### Core analytics
+
+| Sheet | Purpose |
+|---|---|
+| **Dashboard** | KPI strip, live 16-stock table, sector allocation, rebalancing panel, embedded charts |
+| **Analytics** | Per-stock CAGR, return attribution, cost-basis breakdown, risk scores |
+| **Risk Analytics** | CAPM, VaR, CVaR, drawdown, stress tests, factor exposure, Capital Market Line |
+| **Optimization** | Black–Litterman panel with investor views and trade list |
+
+### Watchlist
+
+| Sheet | Purpose |
+|---|---|
+| **WL Dashboard** | Watchlist composite scoring with buy / watch / avoid signals |
+| **Watchlist** | 10 competitor stocks with live data, 52-week ranges, β, P/E, market cap |
+
+### Data & validation
+
+| Sheet | Purpose |
+|---|---|
+| **Ledger** | 112 transaction records with holding period and LT/ST tax status |
+| **Validation** | 23 automated integrity tests; all required `PASS` for dashboard render |
+| **Sparkline** | Price history feeding the dashboard sparklines |
+| **Stock Sheets** | Individual deep-dives per holding |
+| **Skills Matrix** | Quantitative finance concepts the workbook exercises |
+
+![Stock-level deep-dive sheet — price history, return decomposition, risk score](StockDashboard.png)
+
+![Watchlist composite scoring with buy / watch / avoid output](WatchlistDashboard.png)
+
+## Validation harness
 
 A dedicated sheet runs 23 integrity tests across the workbook. Every test must pass before the dashboard renders. Tests cover ledger reconciliation, balance sheet identities, return formula consistency, and inter-sheet ties.
 
