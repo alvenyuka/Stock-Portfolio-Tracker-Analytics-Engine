@@ -1,22 +1,30 @@
-![Stock Portfolio Analytics](banner.svg)
+# Stock-Portfolio-Tracker-Analytics-Engine
 
-<p align="center">
-  <img alt="Excel 365" src="https://img.shields.io/badge/Excel%20365-217346?logo=microsoftexcel&logoColor=white">
-  <img alt="Black-Litterman" src="https://img.shields.io/badge/Black--Litterman-1F4E79">
-  <img alt="VaR / CVaR" src="https://img.shields.io/badge/VaR%20%2F%20CVaR-2E5C8A">
-  <img alt="Monte Carlo" src="https://img.shields.io/badge/Monte%20Carlo-5B7553">
-  <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
-</p>
+> Excel 365 workbook running CAPM, VaR (parametric / historical / Monte Carlo), Black–Litterman optimisation, and tax-aware lot matching on a 16-stock paper portfolio. No VBA, no macros, no add-ins.
 
----
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Excel 365](https://img.shields.io/badge/Excel-365-217346?logo=microsoftexcel&logoColor=white)](https://www.microsoft.com/en-us/microsoft-365/excel)
+[![Validation](https://img.shields.io/badge/validation-23%20checks%20required-success)](#validation)
+[![Portfolio Grade](https://img.shields.io/badge/portfolio%20grade-B%2B-blue)](#portfolio-snapshot)
+[![CAGR](https://img.shields.io/badge/7yr%20CAGR-14.89%25-brightgreen)](#portfolio-snapshot)
 
-## Overview
+![Stock portfolio dashboard — KPI strip, sector allocation, holdings table](MainDashboard.png)
 
-An Excel 365 workbook implementing the standard portfolio risk and performance analytics on a paper portfolio of 16 stocks held over a 7-year horizon. Built natively with `STOCKHISTORY`, the Stocks data type, and dynamic arrays. No VBA, no macros, no add-ins.
+## Why?
 
-## Note: this is a paper portfolio
+Most retail portfolio trackers stop at total return and a pie chart. The risk-adjusted ratios, VaR, and tax-lot accounting that actually matter for sizing positions and reporting taxes live in either expensive platforms or scattered Python scripts. This workbook collapses that stack into one self-contained Excel 365 file: live prices via `STOCKHISTORY`, dynamic-array formulas, and a validation layer that refuses to render the dashboard until 23 integrity checks pass.
 
-The transactions are hypothetical, picked for the project rather than executed through a brokerage account. Every metric in this workbook is derived from the hypothetical ledger, not from real positions.
+> **Note: this is a paper portfolio.** The transactions are hypothetical, picked for the project rather than executed through a brokerage account. Every metric in this workbook is derived from the hypothetical ledger, not from real positions.
+
+## Features
+
+- 📊 **Performance attribution** — per-stock CAGR, return decomposition, unrealised P&L, sector concentration (Herfindahl–Hirschman Index)
+- 📉 **Risk analytics** — CAPM (Jensen's α, portfolio β), Sharpe / Treynor / Sortino / Calmar, parametric / historical / Monte Carlo VaR, Cornish–Fisher heavy-tail adjustment, drawdown + stress panel
+- 🎯 **Black–Litterman optimisation** — market-equilibrium priors combined with user views to produce target weights and a BUY / SELL / HOLD trade list
+- 🧾 **Tax-aware accounting** — lot matching via `MAXIFS`, IRS §1222 short-term / long-term classification, tax-adjusted return
+- 👁️ **Watchlist scoring** — 10 competitor stocks ranked through a composite signal (P/E, β, 52-week range) → buy / watch / avoid
+- 🛡️ **23 automated integrity checks** must all return `PASS` before the dashboard renders
+- ⚡ **Live data** via Excel `Stocks` data type and `STOCKHISTORY` — no VBA, no macros, no add-ins
 
 ## Portfolio snapshot
 
@@ -28,55 +36,78 @@ The transactions are hypothetical, picked for the project rather than executed t
 | 7-year CAGR | 14.89% |
 | Sharpe ratio | 0.47 |
 | Sortino ratio | 3.10 |
-| Portfolio beta | 1.47 |
-| Portfolio grade | B+ |
+| Portfolio β | 1.47 |
+| Portfolio grade | **B+** |
 
-## What's in the workbook
+## Tech Stack
 
-### Performance attribution
-Per-stock CAGR, return decomposition, unrealised gains and losses, sector concentration via the Herfindahl-Hirschman Index. Daily P&L and KPI cards on the dashboard, fed from live quotes via the Excel Stocks data type and `STOCKHISTORY`.
-
-### Risk analytics
-CAPM (Jensen's alpha and portfolio beta), the standard risk-adjusted return ratios (Sharpe, Treynor, Sortino, Calmar), and three flavours of Value-at-Risk: parametric, historical, and Monte Carlo. Cornish-Fisher VaR is included for heavy-tailed adjustment. Drawdown analysis and a stress-test panel sit alongside.
-
-### Watchlist scoring
-Ten competitor stocks ranked through a composite signal model (P/E, beta, 52-week range), with buy, watch, and avoid outputs.
-
-### Portfolio optimisation
-A Black-Litterman panel combining market-equilibrium priors with user-entered views to produce target weights and a BUY / SELL / HOLD trade list.
-
-### Tax-aware accounting
-Lot matching through `MAXIFS`, classifying each position as short-term or long-term under IRS section 1222 for the tax-adjusted return calculation.
-
-### Validation
-A dedicated sheet runs 23 integrity tests across the workbook. Every test must pass before the dashboard renders. Tests cover ledger reconciliation, balance sheet identities, return formula consistency, and inter-sheet ties.
+| Layer | Tools |
+|---|---|
+| Spreadsheet | Microsoft Excel 365 |
+| Live data | `STOCKHISTORY`, Stocks data type, dynamic arrays |
+| Math | Native Excel functions only — no VBA, no macros, no add-ins |
+| Optimisation | Black–Litterman (closed-form, in-sheet) |
 
 ## Sheet structure
 
 | Sheet | Purpose |
 |---|---|
-| Dashboard | KPI strip, live 16-stock table, sector allocation, rebalancing panel, embedded charts |
-| Analytics | Per-stock CAGR, return attribution, cost-basis breakdown, risk scores |
-| Risk Analytics | CAPM, VaR, CVaR, drawdown, stress tests, factor exposure, Capital Market Line |
-| WL Dashboard | Watchlist composite scoring with buy / watch / avoid signals |
-| Watchlist | 10 competitor stocks with live data, 52-week ranges, beta, P/E, market cap |
-| Optimization | Black-Litterman panel with investor views and trade list |
-| Ledger | 112 transaction records with holding period and LT/ST tax status |
-| Validation | 23 automated integrity tests, all required PASS for dashboard render |
-| Skills Matrix | Quantitative finance concepts the workbook exercises |
-| Sparkline | Price history feeding the dashboard sparklines |
-| Stock Sheets | Individual deep-dives per holding |
+| **Dashboard** | KPI strip, live 16-stock table, sector allocation, rebalancing panel, embedded charts |
+| **Analytics** | Per-stock CAGR, return attribution, cost-basis breakdown, risk scores |
+| **Risk Analytics** | CAPM, VaR, CVaR, drawdown, stress tests, factor exposure, Capital Market Line |
+| **WL Dashboard** | Watchlist composite scoring with buy / watch / avoid signals |
+| **Watchlist** | 10 competitor stocks with live data, 52-week ranges, β, P/E, market cap |
+| **Optimization** | Black–Litterman panel with investor views and trade list |
+| **Ledger** | 112 transaction records with holding period and LT/ST tax status |
+| **Validation** | 23 automated integrity tests; all required `PASS` for dashboard render |
+| **Skills Matrix** | Quantitative finance concepts the workbook exercises |
+| **Sparkline** | Price history feeding the dashboard sparklines |
+| **Stock Sheets** | Individual deep-dives per holding |
 
-## How to use
+![Stock-level deep-dive sheet — price history, return decomposition, risk score](StockDashboard.png)
 
-Open in Microsoft Excel 365 with an internet connection. Run Data, then Refresh All, to pull live prices, beta, P/E, and market cap. Review the Dashboard. New trades go on the Ledger and propagate everywhere automatically. Enter market views on the Optimization sheet for revised Black-Litterman weights. Check the Validation sheet; all 23 tests should read PASS.
+![Watchlist composite scoring with buy / watch / avoid output](WatchlistDashboard.png)
 
-## Built with
+## Installation
 
-Microsoft Excel 365 only. Dynamic arrays, Stocks data type, `STOCKHISTORY`, standard formulas. No VBA, no macros, no add-ins.
+No installation. Download `Stock Portfolio.xlsx` and open in Microsoft Excel 365 with an internet connection.
+
+```bash
+git clone https://github.com/alvenyuka/Stock-Portfolio-Tracker-Analytics-Engine.git
+cd Stock-Portfolio-Tracker-Analytics-Engine
+# Open Stock\ Portfolio.xlsx in Excel 365
+```
+
+## Usage
+
+1. Open the workbook in **Microsoft Excel 365** with an internet connection.
+2. Run **Data → Refresh All** to pull live prices, β, P/E, and market cap via the Stocks data type and `STOCKHISTORY`.
+3. Review the **Dashboard**. New trades go on the **Ledger** and propagate everywhere automatically.
+4. Enter market views on the **Optimization** sheet for revised Black–Litterman weights.
+5. Check the **Validation** sheet — all 23 tests must read `PASS`.
+
+## Validation
+
+A dedicated sheet runs 23 integrity tests across the workbook. Every test must pass before the dashboard renders. Tests cover ledger reconciliation, balance sheet identities, return formula consistency, and inter-sheet ties.
+
+## Roadmap
+
+- [x] CAPM, VaR (parametric / historical / Monte Carlo), CVaR
+- [x] Black–Litterman optimisation with investor views
+- [x] Tax-aware lot matching under IRS §1222
+- [x] 23-check validation harness
+- [ ] Factor model (Fama–French 3 / 5) sheet
+- [ ] Scenario stress library (rates +200bp, oil shock, USD/KES devaluation)
 
 ## License
 
-MIT.
+MIT — see [`LICENSE`](LICENSE).
 
-Author: Alven Yuka.
+## Credits
+
+Built with **Microsoft Excel 365** only.
+Author: **Alven Yuka** — CPA Finalist (Kenya).
+
+## Connect
+
+📫 [alvenyuka2@gmail.com](mailto:alvenyuka2@gmail.com) · 💼 [LinkedIn](https://www.linkedin.com/in/alvenyuka) · 🐙 [GitHub](https://github.com/alvenyuka)
