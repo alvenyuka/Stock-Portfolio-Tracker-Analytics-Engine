@@ -4,9 +4,9 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Excel 365](https://img.shields.io/badge/Excel-365-217346?logo=microsoftexcel&logoColor=white)](https://www.microsoft.com/en-us/microsoft-365/excel)
-[![Validation](https://img.shields.io/badge/validation-23%20checks%20required-success)](#validation-harness)
+[![Validation](https://img.shields.io/badge/validation-23%2F23%20checks%20passing-success)](#validation-harness)
 [![Portfolio Grade](https://img.shields.io/badge/portfolio%20grade-B%2B-blue)](#portfolio-snapshot)
-[![CAGR](https://img.shields.io/badge/7yr%20CAGR-14.89%25-brightgreen)](#portfolio-snapshot)
+[![CAGR](https://img.shields.io/badge/7yr%20CAGR-12.59%25-brightgreen)](#portfolio-snapshot)
 
 ![Stock portfolio dashboard — KPI strip, sector allocation, holdings table](MainDashboard.png)
 
@@ -31,8 +31,8 @@ Stock-Portfolio-Tracker-Analytics-Engine/
 ## Quick Start
 
 1. Clone the repo and open `Stock Portfolio.xlsx` in **Microsoft Excel 365**
-2. Run **Data → Refresh All** (requires internet connection for live prices)
-3. Check the **Validation** tab — all 23 tests must read `PASS`
+2. **You will likely see `#VALUE!` errors on first open — this is expected**, on every sheet with a live-price dependency (Dashboard, Watchlist, Ledger, Sparkline, and each individual stock tab). Excel's Stocks data type and `STOCKHISTORY` results are tied to a live cloud connection that doesn't survive a file transfer (clone, zip, or copy to a new machine). Run **Data → Refresh All** to reconnect and repopulate them.
+3. Check the **Validation** tab — all 23 tests must read `PASS` (these test internal consistency — e.g. Dashboard totals matching Analytics totals — and remain valid even before you refresh live prices, since they were captured at the last successful refresh)
 4. Explore the Dashboard, Risk Analytics, and Optimization sheets
 
 > Requires Excel 365 with an internet connection. The Stocks data type and `STOCKHISTORY` function are not available in older Excel versions or Google Sheets.
@@ -49,15 +49,19 @@ Stock-Portfolio-Tracker-Analytics-Engine/
 
 ## Portfolio Snapshot
 
+As of the last refresh captured in this file — pulled directly from the Validation tab's own cross-checked figures, not restated by hand, since `STOCKHISTORY` prices (and everything downstream of them) move every time the workbook is refreshed:
+
 | Metric | Value |
 |---|---|
-| Portfolio value | $303,680 |
-| Cost basis | $132,051 |
-| Total return | 129.97% |
-| 7-year CAGR | 14.89% |
-| Sharpe ratio | 0.47 |
-| Sortino ratio | 3.10 |
+| Portfolio value | $302,909.22 |
+| Cost basis | $132,051.42 |
+| Total return | 129.39% |
+| 7-year CAGR | 12.59% |
+| Sharpe ratio | 0.37 |
+| Sortino ratio | 2.56 |
 | Portfolio beta | 1.47 |
+| Max drawdown | -12.33% |
+| Calmar ratio | 1.02 |
 | Portfolio grade | **B+** |
 
 ## Tech Stack
@@ -94,8 +98,7 @@ Stock-Portfolio-Tracker-Analytics-Engine/
 | **Ledger** | 112 transaction records with holding period and LT/ST tax status |
 | **Validation** | 23 automated integrity tests — all required `PASS` for dashboard render |
 | **Sparkline** | Price history feeding the dashboard sparklines |
-| **Stock Sheets** | Individual deep-dives per holding |
-| **Skills Matrix** | Quantitative finance concepts the workbook exercises |
+| **Stock Sheets** | Individual deep-dive tabs for 10 of the 16 holdings (AMD, BABA, BAC, COST, DELL, XOM, GM, LMT, MSFT, GS) |
 
 ![Stock-level deep-dive sheet — price history, return decomposition, risk score](StockDashboard.png)
 
