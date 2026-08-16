@@ -108,6 +108,13 @@ As of the last refresh captured in this file — pulled directly from the Valida
 
 A dedicated sheet runs 23 integrity tests across the workbook. Every test must pass before the dashboard renders. Tests cover ledger reconciliation, balance sheet identities, return formula consistency, and inter-sheet ties.
 
+## Known Limitations
+
+- **Paper portfolio.** Every metric here is derived from a hypothetical ledger, not executed trades (see the note under Why? above).
+- **Risk-adjusted ratios are a single-point snapshot, not a rolling or out-of-sample measure.** Sharpe, Sortino, and CAGR are computed at the last `STOCKHISTORY` refresh and move every time the workbook is refreshed.
+- **No transaction costs, slippage, or bid-ask spread are modeled.** All fills are at historical closing prices.
+- **Black-Litterman's investor views are illustrative inputs, not derived from an independent forecasting model.** The optimisation sheet demonstrates the method, not a validated alpha signal.
+
 ## Roadmap
 
 - [x] CAPM, VaR (parametric / historical / Monte Carlo), CVaR
@@ -125,6 +132,8 @@ MIT — see [`LICENSE`](LICENSE).
 
 Built with **Microsoft Excel 365** only.
 Author: **Alven Yuka** — CPA Finalist (Kenya).
+
+Built with AI-assisted tooling (Claude Code) for formula scaffolding and this README. Every figure in the Portfolio Snapshot above is pulled directly from the workbook's own 23-check Validation tab, not restated by hand.
 
 ## Connect
 
