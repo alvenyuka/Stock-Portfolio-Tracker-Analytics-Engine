@@ -47,23 +47,6 @@ Stock-Portfolio-Tracker-Analytics-Engine/
 - **23 automated integrity checks** must all return `PASS` before the dashboard renders
 - **Live data** via Excel Stocks data type and `STOCKHISTORY` — no VBA, no macros, no add-ins
 
-## Portfolio Snapshot
-
-As of the last refresh captured in this file — pulled directly from the Validation tab's own cross-checked figures, not restated by hand, since `STOCKHISTORY` prices (and everything downstream of them) move every time the workbook is refreshed:
-
-| Metric | Value |
-|---|---|
-| Portfolio value | $302,909.22 |
-| Cost basis | $132,051.42 |
-| Total return | 129.39% |
-| 7-year CAGR | 12.59% |
-| Sharpe ratio | 0.37 |
-| Sortino ratio | 2.56 |
-| Portfolio beta | 1.47 |
-| Max drawdown | -12.33% |
-| Calmar ratio | 1.02 |
-| Portfolio grade | **B+** |
-
 ## Tech Stack
 
 | Layer | Tools |
@@ -107,6 +90,23 @@ As of the last refresh captured in this file — pulled directly from the Valida
 ## Validation Harness
 
 A dedicated sheet runs 23 integrity tests across the workbook. Every test must pass before the dashboard renders. Tests cover ledger reconciliation, balance sheet identities, return formula consistency, and inter-sheet ties.
+
+## Portfolio Snapshot
+
+As of the last refresh captured in this file — pulled directly from the Validation tab's own cross-checked figures, not restated by hand, since `STOCKHISTORY` prices (and everything downstream of them) move every time the workbook is refreshed:
+
+| Metric | Value |
+|---|---|
+| Portfolio value | $302,909.22 |
+| Cost basis | $132,051.42 |
+| Total return | 129.39% |
+| 7-year CAGR | 12.59% |
+| Sharpe ratio | 0.37 |
+| Sortino ratio | 2.56 |
+| Portfolio beta | 1.47 |
+| Max drawdown | -12.33% |
+| Calmar ratio | 1.02 |
+| Portfolio grade | **B+** |
 
 ## Known Limitations
 
