@@ -8,19 +8,19 @@
 [![Portfolio Grade](https://img.shields.io/badge/portfolio%20grade-B%2B-blue)](#portfolio-snapshot)
 [![CAGR](https://img.shields.io/badge/7yr%20CAGR-12.59%25-brightgreen)](#portfolio-snapshot)
 
-![Stock portfolio dashboard — KPI strip, sector allocation, holdings table](MainDashboard.png)
+![Stock portfolio dashboard: KPI strip, sector allocation, holdings table](MainDashboard.png)
 
 ## Why?
 
-Most retail portfolio trackers stop at total return and a pie chart. The risk-adjusted ratios, VaR, and tax-lot accounting that actually matter for sizing positions and reporting taxes live in either expensive platforms or scattered Python scripts. This workbook collapses that stack into one self-contained Excel 365 file: live prices via `STOCKHISTORY`, dynamic-array formulas, and a validation layer that refuses to render the dashboard until 23 integrity checks pass.
+I wanted to know what my paper portfolio's actual risk profile looked like, not just its return, and the tools for that (VaR, tax-lot accounting, Black-Litterman) are usually split across an expensive platform and a handful of scattered Python scripts. So this workbook puts all of it in one self-contained Excel 365 file: live prices via `STOCKHISTORY`, dynamic-array formulas, and a validation layer that refuses to render the dashboard until 23 integrity checks pass.
 
-> **Note: this is a paper portfolio.** The transactions are hypothetical, picked for the project rather than executed through a brokerage account. Every metric in this workbook is derived from the hypothetical ledger, not from real positions.
+> **Note: this is a paper portfolio.** The transactions are hypothetical, picked for the project rather than executed through a brokerage account. Every metric in this workbook is derived from that hypothetical ledger.
 
 ## Project Structure
 
 ```
 Stock-Portfolio-Tracker-Analytics-Engine/
-├── Stock Portfolio.xlsx          # Main workbook — all analytics in one file
+├── Stock Portfolio.xlsx          # Main workbook, all analytics in one file
 ├── MainDashboard.png             # Dashboard screenshot
 ├── StockDashboard.png            # Stock-level deep-dive screenshot
 ├── WatchlistDashboard.png        # Watchlist scoring screenshot
@@ -31,21 +31,21 @@ Stock-Portfolio-Tracker-Analytics-Engine/
 ## Quick Start
 
 1. Clone the repo and open `Stock Portfolio.xlsx` in **Microsoft Excel 365**
-2. **You will likely see `#VALUE!` errors on first open — this is expected**, on every sheet with a live-price dependency (Dashboard, Watchlist, Ledger, Sparkline, and each individual stock tab). Excel's Stocks data type and `STOCKHISTORY` results are tied to a live cloud connection that doesn't survive a file transfer (clone, zip, or copy to a new machine). Run **Data → Refresh All** to reconnect and repopulate them.
-3. Check the **Validation** tab — all 23 tests must read `PASS` (these test internal consistency — e.g. Dashboard totals matching Analytics totals — and remain valid even before you refresh live prices, since they were captured at the last successful refresh)
+2. **You will likely see `#VALUE!` errors on first open, this is expected**, on every sheet with a live-price dependency (Dashboard, Watchlist, Ledger, Sparkline, and each individual stock tab). Excel's Stocks data type and `STOCKHISTORY` results are tied to a live cloud connection that doesn't survive a file transfer (clone, zip, or copy to a new machine). Run **Data → Refresh All** to reconnect and repopulate them.
+3. Check the **Validation** tab: all 23 tests must read `PASS` (these test internal consistency, e.g. Dashboard totals matching Analytics totals, and remain valid even before you refresh live prices, since they were captured at the last successful refresh)
 4. Explore the Dashboard, Risk Analytics, and Optimization sheets
 
 > Requires Excel 365 with an internet connection. The Stocks data type and `STOCKHISTORY` function are not available in older Excel versions or Google Sheets.
 
 ## Features
 
-- **Performance attribution** — per-stock CAGR, return decomposition, unrealised P&L, sector concentration (Herfindahl-Hirschman Index)
-- **Risk analytics** — CAPM (Jensen's alpha, portfolio beta), Sharpe / Treynor / Sortino / Calmar, parametric / historical / Monte Carlo VaR, Cornish-Fisher heavy-tail adjustment, drawdown + stress panel
-- **Black-Litterman optimisation** — market-equilibrium priors combined with user views to produce target weights and a BUY / SELL / HOLD trade list
-- **Tax-aware accounting** — lot matching via `MAXIFS`, IRS §1222 short-term / long-term classification, tax-adjusted return
-- **Watchlist scoring** — 10 competitor stocks ranked through a composite signal (P/E, beta, 52-week range) → buy / watch / avoid
+- **Performance attribution**: per-stock CAGR, return decomposition, unrealised P&L, sector concentration (Herfindahl-Hirschman Index)
+- **Risk analytics**: CAPM (Jensen's alpha, portfolio beta), Sharpe / Treynor / Sortino / Calmar, parametric / historical / Monte Carlo VaR, Cornish-Fisher heavy-tail adjustment, drawdown + stress panel
+- **Black-Litterman optimisation**: market-equilibrium priors combined with user views to produce target weights and a BUY / SELL / HOLD trade list
+- **Tax-aware accounting**: lot matching via `MAXIFS`, IRS §1222 short-term / long-term classification, tax-adjusted return
+- **Watchlist scoring**: 10 competitor stocks ranked through a composite signal (P/E, beta, 52-week range) → buy / watch / avoid
 - **23 automated integrity checks** must all return `PASS` before the dashboard renders
-- **Live data** via Excel Stocks data type and `STOCKHISTORY` — no VBA, no macros, no add-ins
+- **Live data** via Excel Stocks data type and `STOCKHISTORY`, no VBA, no macros, no add-ins
 
 ## Tech Stack
 
@@ -53,7 +53,7 @@ Stock-Portfolio-Tracker-Analytics-Engine/
 |---|---|
 | Spreadsheet | Microsoft Excel 365 |
 | Live data | `STOCKHISTORY`, Stocks data type, dynamic arrays |
-| Math | Native Excel functions only — no VBA, no macros, no add-ins |
+| Math | Native Excel functions only, no VBA, no macros, no add-ins |
 | Optimisation | Black-Litterman (closed-form, in-sheet) |
 
 ## Sheet Structure
@@ -79,11 +79,11 @@ Stock-Portfolio-Tracker-Analytics-Engine/
 | Sheet | Purpose |
 |---|---|
 | **Ledger** | 112 transaction records with holding period and LT/ST tax status |
-| **Validation** | 23 automated integrity tests — all required `PASS` for dashboard render |
+| **Validation** | 23 automated integrity tests, all required `PASS` for dashboard render |
 | **Sparkline** | Price history feeding the dashboard sparklines |
 | **Stock Sheets** | Individual deep-dive tabs for 10 of the 16 holdings (AMD, BABA, BAC, COST, DELL, XOM, GM, LMT, MSFT, GS) |
 
-![Stock-level deep-dive sheet — price history, return decomposition, risk score](StockDashboard.png)
+![Stock-level deep-dive sheet: price history, return decomposition, risk score](StockDashboard.png)
 
 ![Watchlist composite scoring with buy / watch / avoid output](WatchlistDashboard.png)
 
@@ -93,7 +93,7 @@ A dedicated sheet runs 23 integrity tests across the workbook. Every test must p
 
 ## Portfolio Snapshot
 
-As of the last refresh captured in this file — pulled directly from the Validation tab's own cross-checked figures, not restated by hand, since `STOCKHISTORY` prices (and everything downstream of them) move every time the workbook is refreshed:
+As of the last refresh captured in this file, pulled directly from the Validation tab's own cross-checked figures, not restated by hand, since `STOCKHISTORY` prices (and everything downstream of them) move every time the workbook is refreshed:
 
 | Metric | Value |
 |---|---|
@@ -126,12 +126,12 @@ As of the last refresh captured in this file — pulled directly from the Valida
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE).
+MIT. See [`LICENSE`](LICENSE).
 
 ## Credits
 
 Built with **Microsoft Excel 365** only.
-Author: **Alven Yuka** — CPA Finalist (Kenya).
+Author: **Alven Yuka**, CPA Finalist (Kenya).
 
 Built with AI-assisted tooling (Claude Code) for formula scaffolding and this README. Every figure in the Portfolio Snapshot above is pulled directly from the workbook's own 23-check Validation tab, not restated by hand.
 
