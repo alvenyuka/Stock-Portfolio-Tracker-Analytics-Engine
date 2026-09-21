@@ -31,7 +31,7 @@ Stock-Portfolio-Tracker-Analytics-Engine/
 ## Quick Start
 
 1. Clone the repo and open `Stock Portfolio.xlsx` in **Microsoft Excel 365**
-2. **You will likely see `#VALUE!` errors on first open, this is expected**, on every sheet with a live-price dependency (Dashboard, Watchlist, Ledger, Sparkline, and each individual stock tab). Excel's Stocks data type and `STOCKHISTORY` results are tied to a live cloud connection that doesn't survive a file transfer (clone, zip, or copy to a new machine). Run **Data → Refresh All** to reconnect and repopulate them.
+2. **You will likely see `#VALUE!` errors on first open, this is expected**, on every sheet with a live-price dependency (Dashboard, Watchlist, Ledger, Spartkine, and each individual stock tab). Excel's Stocks data type and `STOCKHISTORY` results are tied to a live cloud connection that doesn't survive a file transfer (clone, zip, or copy to a new machine). Run **Data → Refresh All** to reconnect and repopulate them.
 3. Check the **Validation** tab: all 23 tests must read `PASS` (these test internal consistency, e.g. Dashboard totals matching Analytics totals, and remain valid even before you refresh live prices, since they were captured at the last successful refresh)
 4. Explore the Dashboard, Risk Analytics, and Optimization sheets
 
@@ -80,7 +80,7 @@ Stock-Portfolio-Tracker-Analytics-Engine/
 |---|---|
 | **Ledger** | 112 transaction records with holding period and LT/ST tax status |
 | **Validation** | 23 automated integrity tests, all required `PASS` for dashboard render |
-| **Sparkline** | Price history feeding the dashboard sparklines |
+| **Spartkine** | Price history feeding the dashboard sparklines (the tab is spelled this way in the workbook) |
 | **Stock Sheets** | Individual deep-dive tabs for 10 of the 16 holdings (AMD, BABA, BAC, COST, DELL, XOM, GM, LMT, MSFT, GS) |
 
 ![Stock-level deep-dive sheet: price history, return decomposition, risk score](StockDashboard.png)
