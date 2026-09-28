@@ -33,3 +33,14 @@ Thumbs.db
 desktop.ini
 .vscode/
 .idea/
+
+# ============================================================
+# Python
+# ============================================================
+# Added with validate_portfolio.py and its tests. Without this, running pytest
+# leaves bytecode in tests/__pycache__ that a plain 'git add' will happily stage.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/

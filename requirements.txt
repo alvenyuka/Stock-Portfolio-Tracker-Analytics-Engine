@@ -1,0 +1,13 @@
+# Stock-Portfolio-Tracker-Analytics-Engine
+#
+# The engine itself is an Excel 365 workbook with no macros and no add-ins, so
+# nothing here is needed to open or use it. This file exists for one script:
+# validate_portfolio.py, which recomputes the workbook's analytics outside the
+# spreadsheet so its Validation tab can be checked rather than trusted.
+
+openpyxl>=3.1      # reads the .xlsx; data_only=True gives cached formula results
+
+# Testing
+# The validator is itself tested, by breaking a copy of the workbook and
+# confirming each fault is caught.
+pytest>=8.0

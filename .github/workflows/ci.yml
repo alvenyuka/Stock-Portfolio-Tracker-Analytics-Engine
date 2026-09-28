@@ -1,0 +1,42 @@
+name: validate workbook
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      # This repository can validate its real artefact in CI. The workbook is
+      # committed, it is under half a megabyte, and the checks are arithmetic, so
+      # there is no data to fetch and nothing to fit.
+      #
+      # The Validation tab inside the workbook prints ALL PASS, but that banner is
+      # computed by the same spreadsheet whose formulas are in question, and its
+      # pass count tallies only the rows that evaluate, so a cell in error is
+      # skipped rather than failed. This job is the outside opinion.
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Order matters. The tests break a copy of the workbook and confirm each
+      # fault is reported, which is what makes the second step meaningful. Running
+      # only the second would show a green tick even if every comparison in the
+      # script were inverted.
+      - name: Test the validator against deliberately broken workbooks
+        run: python -m pytest
+
+      - name: Re-derive every figure in the real workbook
+        run: python validate_portfolio.py

@@ -7,6 +7,7 @@
 [![Validation](https://img.shields.io/badge/validation-23%2F23%20checks%20passing-success)](#validation-harness)
 [![Portfolio Grade](https://img.shields.io/badge/portfolio%20grade-B%2B-blue)](#portfolio-snapshot)
 [![CAGR](https://img.shields.io/badge/7yr%20CAGR-12.59%25-brightgreen)](#portfolio-snapshot)
+[![workbook validated](https://github.com/alvenyuka/Stock-Portfolio-Tracker-Analytics-Engine/actions/workflows/ci.yml/badge.svg)](https://github.com/alvenyuka/Stock-Portfolio-Tracker-Analytics-Engine/actions/workflows/ci.yml)
 
 ![Stock portfolio dashboard: KPI strip, sector allocation, holdings table](MainDashboard.png)
 
@@ -24,6 +25,12 @@ Stock-Portfolio-Tracker-Analytics-Engine/
 ├── MainDashboard.png             # Dashboard screenshot
 ├── StockDashboard.png            # Stock-level deep-dive screenshot
 ├── WatchlistDashboard.png        # Watchlist scoring screenshot
+├── validate_portfolio.py         # Recomputes every figure outside the spreadsheet
+├── tests/
+│   ├── test_validate_portfolio.py  # Breaks a copy, checks each fault is caught
+│   └── xlsx_surgery.py             # Edits one cached cell without losing the rest
+├── .github/workflows/ci.yml      # Runs both on every push
+├── requirements.txt              # openpyxl and pytest, for the validator only
 ├── LICENSE
 └── README.md
 ```
@@ -90,6 +97,42 @@ Stock-Portfolio-Tracker-Analytics-Engine/
 ## Validation Harness
 
 A dedicated sheet runs 23 integrity tests across the workbook. Every test must pass before the dashboard renders. Tests cover ledger reconciliation, balance sheet identities, return formula consistency, and inter-sheet ties.
+
+### Checking it without opening Excel
+
+That sheet reports its own results, which is worth exactly what the formulas
+behind it are worth. `validate_portfolio.py` is the outside opinion: it reads
+only inputs, recomputes every derived figure in Python, and never reads a cell
+containing a tick or a pass count.
+
+```bash
+pip install -r requirements.txt
+python validate_portfolio.py                 # defaults to the workbook here
+python validate_portfolio.py path/to/Book.xlsx
+```
+
+27 figures across three groups. **Portfolio accounting**: totals against the sum
+of their parts, the profit identity, and every holding's gain, return and weight.
+**Concentration**: the Herfindahl-Hirschman index against the sum of squared
+sector weights, effective positions against the reciprocal of the holding-level
+index, and the top-three weight. **CAPM and risk**: the equity risk premium, the
+CAPM expected return, Jensen's alpha, and the Treynor, Sharpe, Sortino and Calmar
+ratios, each rebuilt from its own definition. All 27 reconcile on the committed
+workbook, and the script exits non-zero if any stops doing so.
+
+**The validator is itself tested.** A script only ever run against a correct
+workbook proves nothing: it would report everything as matching just as
+confidently if its comparisons were inverted. So `tests/` copies the workbook,
+changes one cached cell, and asserts that specific figure is reported as wrong.
+Eleven tests cover a broken total, a single corrupted holding weight, a wrong
+index, a broken CAPM return, a broken Sharpe ratio, and a cell holding a division
+by zero. CI runs those first and the real workbook second.
+
+One detail worth knowing if you extend the tests: openpyxl holds either formulas
+or cached results, never both, so saving a workbook with it discards every cached
+value and the validator then reads nothing. `tests/xlsx_surgery.py` edits the
+cached value directly in the sheet XML instead, leaving the formula, the styles
+and every other cell untouched.
 
 ## Portfolio Snapshot
 
