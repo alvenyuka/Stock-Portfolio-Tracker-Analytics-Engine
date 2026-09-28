@@ -1,0 +1,35 @@
+# ============================================================
+# Working backups of the workbook
+# ============================================================
+# The editing workflow snapshots "Stock Portfolio.xlsx" before each risky
+# change, which leaves a pile of half-megabyte .bak files next to it. They are
+# local safety nets, not history: git already holds the versions worth keeping.
+*.bak
+*.bak[0-9]
+*.bak[0-9]-*
+*.xlsx.bak*
+~$*.xlsx
+
+# ============================================================
+# Power BI
+# ============================================================
+# The .pbip project folders are a work in progress and are not part of the
+# published Excel engine. Remove these lines when the Power BI report is ready
+# to ship as part of the repo.
+*.pbip
+StockPortfolio.Report/
+StockPortfolio.SemanticModel/
+
+# ============================================================
+# Local data pulls
+# ============================================================
+data/
+
+# ============================================================
+# OS / editor
+# ============================================================
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
