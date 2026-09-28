@@ -29,6 +29,18 @@ Three groups of checks:
 A failure here means the workbook and the arithmetic disagree, which the
 Validation tab cannot tell you.
 
+What this script cannot tell you, stated here because an earlier version of it
+read as though it could. Every check above compares the workbook against its own
+definitions. None of them can find a figure that is computed correctly and means
+something other than its label says. Four such defects are known, so they are
+reported explicitly, under KNOWN DEFECT, with the numbers measured rather than
+described. They do not fail the run, because they are not arithmetic errors and
+because correcting them rewrites published performance figures, which is the
+owner's decision and not this script's. The one that matters most is the first:
+the Dashboard adds sell transactions to positions instead of netting them, so
+every figure in the workbook, including the ones re-derived and matched above,
+is built on the wrong number of units.
+
 Usage:
 
     python validate_portfolio.py                    # defaults to the workbook here
@@ -55,6 +67,17 @@ DEFAULT = Path(__file__).parent / "Stock Portfolio.xlsx"
 # needs to absorb floating-point noise, not presentation rounding.
 ABS_TOL = 1e-6
 REL_TOL = 1e-9
+
+# The workbook's market-volatility assumption, hardcoded in Risk Analytics C25,
+# C66 and C68. Unlike Rf and Rm it is not a labelled input cell, which is why it
+# is named here rather than back-solved from the figure it produces.
+MARKET_VOLATILITY = 0.155
+
+# The workbook annualises over a fixed 7-year horizon, in Analytics E6 and in
+# Dashboard Q7, for every holding alike. The ledger runs 2019 to 2025 and
+# individual lots were bought as late as 2024, so this is a lump-sum equivalent
+# rather than a money-weighted return. Named here so the assumption is visible.
+CAGR_YEARS = 7
 
 STOCK_FIRST, STOCK_LAST = 10, 25          # Analytics rows, inclusive
 SECTOR_FIRST, SECTOR_LAST = 29, 38
@@ -86,6 +109,31 @@ class Result:
         if isinstance(d, str) or d is None:
             return f"could not derive ({d!r})"
         return f"derived {d:,.10g} vs workbook {r:,.10g}, differs by {d - r:,.3g}"
+
+
+class Defect:
+    """A finding the arithmetic checks cannot express.
+
+    Every Result above asks whether the workbook computes what its own formula
+    says. A Defect asks whether the formula computes what its label claims, and
+    the answer is fixed and known, so there is nothing to compare. It is printed
+    with its measured numbers and does not affect the exit code: correcting any
+    of these changes published performance figures, and that is a decision for
+    the owner of the model rather than for a validator.
+    """
+
+    def __init__(self, label, detail):
+        self.label = label
+        self.detail = detail
+
+
+def ascii_label(text):
+    """The workbook's row labels carry Greek letters and en dashes. Printing them
+    verbatim raises on a console using a legacy code page, so a defect report
+    would crash on exactly the machine the workbook is edited on."""
+    if not isinstance(text, str):
+        return str(text)
+    return text.encode("ascii", "replace").decode("ascii")
 
 
 def num(v):
@@ -166,6 +214,14 @@ def build(wb):
                          pnl_total))
     checks.append(Result("Portfolio accounting", "total return % = P&L / cost basis",
                          (pnl_total / cost_total) if cost_total else None, ret_total))
+    # CAGR is the numerator of Jensen's alpha, Treynor, Sharpe, Sortino, Calmar,
+    # the VaR series and M-squared, and it was the one figure this script read
+    # without rederiving. The horizon is hardcoded at 7 years in the workbook.
+    checks.append(Result("Portfolio accounting",
+                         f"CAGR = (1 + total return) ^ (1/{CAGR_YEARS}) - 1",
+                         ((1 + ret_total) ** (1 / CAGR_YEARS) - 1) if ret_total is not None else None,
+                         cagr))
+
     checks.append(Result("Portfolio accounting", "holding gains sum to total P&L",
                          sum(s["gain"] for s in stocks), pnl_total))
     checks.append(Result("Portfolio accounting", "holding weights sum to 100%",
@@ -271,11 +327,112 @@ def build(wb):
               "prints ALL PASS, because the pass count only tallies rows that "
               "evaluate, so a cell in error is skipped rather than failed."),
     ))
-    checks.append(Result("CAPM and risk", "portfolio volatility = beta x market volatility (implied)",
-                         (beta * (num(vol) / beta)) if beta and num(vol) else None, num(vol)))
+    # The previous version of this check derived `beta * (vol / beta)`, which is
+    # `vol` for any non-zero beta, so it compared a cell against itself and
+    # could not fail for any volatility whatsoever. The assumption it was meant
+    # to pin is the 0.155 market volatility, which is hardcoded three times in
+    # the workbook and, unlike Rf and Rm, is not a labelled input cell.
+    checks.append(Result("CAPM and risk",
+                         f"portfolio volatility = beta x {MARKET_VOLATILITY} market volatility",
+                         (beta * MARKET_VOLATILITY) if beta is not None else None,
+                         num(vol)))
 
     return checks, {"holdings": len(stocks), "sectors": len(sectors),
                     "mv_total": mv_total, "worst": worst["name"]}
+
+
+def build_defects(wb):
+    """The four things the checks above are structurally unable to catch."""
+    a = wb["Analytics"]
+    r = wb["Risk Analytics"]
+    rv = risk_values(r)
+    defects = []
+
+    # ---- 1. the ledger does not reconcile to the holdings --------------------
+    if "Ledger" in wb.sheetnames:
+        ledger = wb["Ledger"]
+        gross = net = 0.0
+        buys = sells = 0
+        for row in range(1, ledger.max_row + 1):
+            kind = ledger.cell(row, 4).value
+            units = num(ledger.cell(row, 6).value)
+            if not isinstance(kind, str) or units is None:
+                continue
+            kind = kind.strip().lower()
+            if kind == "buy":
+                buys += 1
+                gross += units
+                net += units
+            elif kind == "sell":
+                sells += 1
+                gross += units
+                net -= units
+        dashboard_units = sum(
+            num(a.cell(row, 2).value) or 0.0 for row in range(STOCK_FIRST, STOCK_LAST + 1)
+        )
+        if buys and sells:
+            defects.append(Defect(
+                "the holdings do not net the ledger's sales",
+                f"{buys} buys and {sells} sells, every one of them recorded with "
+                f"positive units, are added together by a plain SUMIF on "
+                f"Dashboard!D7. Gross units across the ledger: {gross:,.2f}. Net "
+                f"of sales: {net:,.2f}. A sale therefore increases both the "
+                f"position and the cost basis. Market value, weights, returns, "
+                f"CAGR and every risk ratio on this sheet inherit it, including "
+                f"the ones reported as matching above, which check the workbook "
+                f"against itself and not against the ledger."
+            ))
+
+    # ---- 2. tracking error is a standard deviation minus a return -----------
+    # "Tracking Error" also appears inside the Information Ratio's own label,
+    # which comes first on the sheet, so match on the row that starts with it.
+    te, te_label = find_risk(rv, "tracking error (")
+    ir, _ = find_risk(rv, "information ratio")
+    alpha, _ = find_risk(rv, "jensen")
+    if num(te) is not None and num(te) < 0:
+        defects.append(Defect(
+            "tracking error is negative, and the information ratio inherits its sign",
+            f"{ascii_label(te_label)!r} is {num(te):,.6f}. It is computed as the cross-sectional "
+            f"standard deviation of the holdings' returns minus the portfolio's own "
+            f"return, which subtracts a return level from a dispersion measure. A "
+            f"standard deviation cannot be negative. The information ratio divides "
+            f"Jensen's alpha ({num(alpha):,.6f}) by it and reports "
+            f"{num(ir):,.6f}, positive, on a portfolio the same sheet marks as "
+            f"having negative alpha, negative M-squared and a below-CML position. "
+            f"Tracking error needs a benchmark return series, which the workbook "
+            f"does not have."
+        ))
+
+    # ---- 3. max drawdown is the worst holding's total return ----------------
+    maxdd, dd_label = find_risk(rv, "max", "position")
+    calmar, _ = find_risk(rv, "calmar")
+    if num(maxdd) is not None:
+        defects.append(Defect(
+            "the Calmar denominator is not a drawdown",
+            f"{ascii_label(dd_label)!r} is {num(maxdd):,.6f}, the worst single holding's total "
+            f"return since inception. A maximum drawdown is a peak-to-trough "
+            f"decline of the portfolio's value over time, and no such series is "
+            f"computed anywhere in the workbook. Calmar "
+            f"({num(calmar) if num(calmar) is not None else calmar}) is CAGR "
+            f"divided by it, and is then scored against benchmark bands that "
+            f"belong to a real Calmar ratio."
+        ))
+
+    # ---- 4. volatility contains no idiosyncratic risk -----------------------
+    vol, vol_label = find_risk(rv, "volatility")
+    if num(vol) is not None:
+        defects.append(Defect(
+            "Sharpe and the VaR series use systematic volatility only",
+            f"{ascii_label(vol_label)!r} is beta times a hardcoded {MARKET_VOLATILITY} market "
+            f"volatility, so it carries no idiosyncratic risk at all. For a "
+            f"16-holding book whose largest position is about a third of market "
+            f"value, total volatility is materially higher, so Sharpe is "
+            f"overstated and the VaR and CVaR tail losses are understated. It "
+            f"also makes Sharpe algebraically identical to Treynor divided by "
+            f"{MARKET_VOLATILITY}, so the two are not independent measures."
+        ))
+
+    return defects
 
 
 def main(argv):
@@ -285,6 +442,7 @@ def main(argv):
 
     wb = load(path)
     checks, meta = build(wb)
+    defects = build_defects(wb)
 
     print(f"Workbook: {path.name}")
     print(f"Holdings: {meta['holdings']}   Sectors: {meta['sectors']}   "
@@ -309,12 +467,29 @@ def main(argv):
                     print(f"            {line}")
                 print()
 
+    if defects:
+        print("\n  Known defects, reported but not failed")
+        for d in defects:
+            print(f"    KNOWN DEFECT  {d.label}")
+            print()
+            for line in _wrap(d.detail, 64):
+                print(f"            {line}")
+            print()
+
     print("\n" + "-" * 78)
     print(f"{len(checks) - failed} of {len(checks)} figures re-derived independently and matched.")
+    if defects:
+        print(f"{len(defects)} known defect(s) reported above. These are not "
+              f"arithmetic errors, so nothing here fails on them, and they are "
+              f"not fixed here because correcting them rewrites published "
+              f"performance figures.")
     if failed:
         print(f"{failed} FAILED. The workbook's own Validation tab does not report these.")
         return 1
-    print("Every derived figure was recomputed outside the spreadsheet and agrees.")
+    print("Every derived figure was recomputed outside the spreadsheet and agrees "
+          "with the workbook's own definitions. That is a consistency result, not "
+          "a statement that the definitions are the right ones. See the known "
+          "defects above.")
     return 0
 
 
