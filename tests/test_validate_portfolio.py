@@ -7,13 +7,13 @@ only way to know it works is to hand it a workbook that is wrong and confirm it
 says so, and to name which figure is wrong.
 
 Each test copies the workbook, changes one cell, and asserts that specific
-failure is reported. They cover the three groups the validator checks:
-portfolio accounting, concentration, and the CAPM and risk ratios.
+failure is reported. They cover every group the validator checks: holdings
+rebuilt from the ledger, portfolio totals, concentration, the 12-month back-cast
+and the CAPM and risk ratios.
 
-One test deliberately reproduces a real regression. A division by zero in the
-Calmar ratio cell leaves the workbook's own Validation tab still printing ALL
-PASS, because its pass count tallies only the rows that evaluate and skips the
-one in error. That is the exact failure mode this script exists to catch.
+Several reproduce defects this workbook really had: sales added to positions
+instead of netted, a volatility that was not measured from prices, and a cell in
+error that a pass count skipped rather than failed.
 """
 import os
 import shutil
@@ -32,12 +32,19 @@ WORKBOOK = REPO / "Stock Portfolio.xlsx"
 SCRIPT = REPO / "validate_portfolio.py"
 
 # Analytics sheet
-ROW_TOTALS = 6              # cost basis, market value, P&L, return, CAGR, holdings
+ROW_TOTALS = 6              # cost basis, market value, P&L, return, IRR, holdings
 COL_MARKET_VALUE = 2
+COL_IRR = 5
 ROW_FIRST_STOCK = 10
 COL_STOCK_WEIGHT = 6
+COL_REALISED = 9
 ROW_HHI = 39
 COL_HHI = 4
+# Dashboard sheet
+ROW_FIRST_HOLDING = 7
+COL_UNITS = 4
+# Portfolio Series sheet
+ROW_VOLATILITY = 14
 
 
 def run(workbook: Path):
@@ -103,22 +110,8 @@ def edit(path: Path, sheet: str, edits: dict, *, as_error: bool = False):
         set_cached_value(path, sheet, ref(row, col), value, as_error=as_error)
 
 
-def risk_row(path: Path, fragment: str):
-    """Find a row on Risk Analytics whose column B label contains fragment."""
-    wb = openpyxl.load_workbook(path, data_only=True)
-    ws = wb["Risk Analytics"]
-    try:
-        for r in range(1, ws.max_row + 1):
-            label = ws.cell(r, 2).value
-            if isinstance(label, str) and fragment.lower() in label.lower():
-                return r
-    finally:
-        wb.close()
-    raise AssertionError(f"no Risk Analytics row matching {fragment!r}")
-
-
 # --------------------------------------------------------------------------
-# Portfolio accounting
+# Holdings and totals
 # --------------------------------------------------------------------------
 
 def test_broken_market_value_total_is_caught(book):
@@ -164,14 +157,9 @@ def test_broken_hhi_is_caught(book):
 
 
 def test_effective_positions_uses_holding_weights_not_sector_weights(clean_book):
-    """Regression test for a mistake in this validator rather than the workbook.
-
-    Two different measures share the name HHI here. The HHI Index row is sector
-    concentration; effective positions is the reciprocal of the holding-level
-    HHI. Checking one against the other reported a defect that did not exist.
-    The unmodified workbook must pass, which it only does when the right basis
-    is used.
-    """
+    """Two measures share the name HHI: sector concentration, and the holding
+    level one behind effective positions. The unmodified workbook passes only
+    when the right basis is used."""
     code, out = run(clean_book)
     assert code == 0, out
     assert "effective positions = 1 / HHI of holding weights" in out
@@ -183,8 +171,7 @@ def test_effective_positions_uses_holding_weights_not_sector_weights(clean_book)
 
 def test_broken_capm_expected_return_is_caught(book):
     wb = book()
-    row = risk_row(wb, "Expected Return")
-    edit(wb, "Risk Analytics", {(row, 3): 0.5})
+    edit(wb, "Risk Analytics", {(10, 3): 0.5})
     code, out = run(wb)
     assert code == 1, out
     assert "CAPM expected return" in out
@@ -192,24 +179,61 @@ def test_broken_capm_expected_return_is_caught(book):
 
 def test_broken_sharpe_is_caught(book):
     wb = book()
-    row = risk_row(wb, "Sharpe")
-    edit(wb, "Risk Analytics", {(row, 3): 99})
+    edit(wb, "Risk Analytics", {(18, 3): 99})
     code, out = run(wb)
     assert code == 1, out
     assert "Sharpe" in out
 
 
 def test_a_cell_in_error_is_caught_and_explained(book):
-    """The real regression. A division by zero in the Calmar cell leaves the
-    workbook's own Validation tab printing ALL PASS, because its count skips
-    rows that do not evaluate. The validator must fail and say why."""
+    """A division by zero in the Calmar cell. The validator must fail and say
+    the workbook's value is not a number, rather than skip the row."""
     wb = book()
-    row = risk_row(wb, "Calmar")
-    edit(wb, "Risk Analytics", {(row, 3): "#DIV/0!"}, as_error=True)
+    edit(wb, "Risk Analytics", {(20, 3): "#DIV/0!"}, as_error=True)
     code, out = run(wb)
     assert code == 1, out
     assert "Calmar" in out
     assert "not a number" in out
+
+
+# --------------------------------------------------------------------------
+# Defects this workbook really had
+# --------------------------------------------------------------------------
+
+def test_sales_added_instead_of_netted_is_caught(book):
+    """The original defect: a holding's units counted sales as purchases."""
+    wb = book()
+    edit(wb, "Dashboard", {(ROW_FIRST_HOLDING, COL_UNITS): 107.16})
+    code, out = run(wb)
+    assert code == 1, out
+    assert "units = bought - sold" in out
+
+
+def test_a_wrong_realised_pnl_is_caught(book):
+    wb = book()
+    edit(wb, "Analytics", {(ROW_FIRST_STOCK, COL_REALISED): 0})
+    code, out = run(wb)
+    assert code == 1, out
+    assert "realised P&L = proceeds - units sold x average cost" in out
+
+
+def test_a_wrong_portfolio_irr_is_caught(book):
+    """The old workbook annualised over a fixed seven years; the return must be
+    the XIRR of the dated trades."""
+    wb = book()
+    edit(wb, "Analytics", {(ROW_TOTALS, COL_IRR): 0.1259})
+    code, out = run(wb)
+    assert code == 1, out
+    assert "portfolio annual return = XIRR" in out
+
+
+def test_a_volatility_not_measured_from_prices_is_caught(book):
+    """The old workbook set volatility to beta x a hardcoded 0.155."""
+    wb = book()
+    edit(wb, "Portfolio Series", {(ROW_VOLATILITY, 2): 0.2283})
+    code, out = run(wb)
+    assert code == 1, out
+    assert "volatility = sample stdev of daily returns" in out
 
 
 # --------------------------------------------------------------------------
