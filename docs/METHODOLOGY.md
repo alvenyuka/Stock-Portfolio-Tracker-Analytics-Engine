@@ -50,7 +50,7 @@ giving a daily value for today's portfolio over the last 12 months (250 daily re
 | Tracking error vs SPY | stdev of daily active returns x sqrt(252) | 16.91% |
 | Information ratio | (12-month return - SPY 12-month return) / tracking error | 1.20 |
 
-One holding, 0R2N (London-listed Lockheed Martin, 2.1% of value), returns no price history from
+One holding, 0R2N (the London listing of RTX Corporation, 2.1% of value), returns no price history from
 `STOCKHISTORY`, so the series covers 15 holdings and 97.9% of market value.
 
 **CAPM and ratios.** Risk-free rate 4.25% and market return 10.0% are labelled inputs. Portfolio beta is the
