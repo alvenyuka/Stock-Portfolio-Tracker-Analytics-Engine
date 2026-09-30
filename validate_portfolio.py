@@ -262,7 +262,7 @@ def build(wb):
     for r in range(SECTOR_FIRST, SECTOR_LAST + 1):
         name, mv = an.cell(r, 1).value, num(an.cell(r, 2).value)
         if name and mv is not None:
-            sectors.append({"mv": mv, "wt": num(an.cell(r, 3).value), "hhi": num(an.cell(r, 4).value)})
+            sectors.append({"name": name, "mv": mv, "wt": num(an.cell(r, 3).value), "hhi": num(an.cell(r, 4).value)})
     add(G, "sector market values sum to the portfolio total", sum(s["mv"] for s in sectors), mv_total)
     add(G, "sector weights sum to 100%", sum(s["wt"] for s in sectors), 1.0)
     add(G, "HHI = sum of squared sector weights", sum(s["wt"] ** 2 for s in sectors),
@@ -296,10 +296,11 @@ def build(wb):
     ret12 = value[-1] / value[0] - 1
     vol = statistics.stdev(rets) * math.sqrt(TRADING_DAYS)
     downside = math.sqrt(sum(x * x for x in rets if x < 0) / len(rets)) * math.sqrt(TRADING_DAYS)
-    peak, mdd = value[0], 0.0
+    peak, mdd, mdd_usd = value[0], 0.0, 0.0
     for v in value:
         peak = max(peak, v)
         mdd = min(mdd, v / peak - 1)
+        mdd_usd = min(mdd_usd, v - peak)
     hvar = -percentile_inc(rets, 0.05)
     add(G, "12-month return = last value / first value - 1", ret12, num(ps[PS["ret12"]].value))
     add(G, "volatility = sample stdev of daily returns x sqrt(252)", vol, num(ps[PS["vol"]].value))
@@ -348,8 +349,14 @@ def build(wb):
     add(G, "expected shortfall 95% = CAPM return - 2.063 x volatility", capm - 2.063 * vol,
         num(ra[RA["cvar"]].value))
 
+    top = max(rows, key=lambda r: r["mv"])
+    top_sector = max(sectors, key=lambda s: s["mv"])
     meta = {"holdings": n, "sectors": len(sectors), "mv_total": mv_total, "asof": asof,
-            "covered": covered, "ndays": ndays}
+            "covered": covered, "ndays": ndays,
+            "money": {"total_gain": mv_total + sells - buys, "realised": realised_total,
+                      "hvar_usd": hvar * mv_total, "mdd_usd": mdd_usd,
+                      "top_holding": (top["tk"], top["mv"], top["mv"] / mv_total),
+                      "top_sector": (top_sector["name"], top_sector["mv"], top_sector["mv"] / mv_total)}}
     return checks, meta
 
 
@@ -390,6 +397,19 @@ def main(argv):
         print(f"{failed} FAILED. The workbook disagrees with its own inputs on these.")
         return 1
     print("Every figure was rebuilt from the ledger, prices and inputs, and agrees with the workbook.")
+    m = meta["money"]
+    tk, tmv, tw = m["top_holding"]
+    sn, smv, sw = m["top_sector"]
+    print()
+    print("  Money at risk (from the figures above)")
+    print(f"    total gain since 2019 (realised + unrealised)   {m['total_gain']:>12,.0f}")
+    print(f"    realised P&L on sales                           {m['realised']:>12,.0f}")
+    print(f"    1-day historical VaR, 95%                        {m['hvar_usd']:>12,.0f}")
+    print(f"    worst 12-month drawdown, current holdings        {m['mdd_usd']:>12,.0f}")
+    print(f"    largest holding {tk:<6} ({tw:.1%} of value)          {tmv:>12,.0f}")
+    print(f"    largest sector ({sw:.1%} of value)                 {smv:>12,.0f}  {sn}")
+    print(f"    loss if that sector fell 30%                     {0.3 * smv:>12,.0f}"
+          f"  ({0.3 * sw:.1%} of the portfolio)")
     return 0
 
 

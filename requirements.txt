@@ -6,6 +6,7 @@
 # spreadsheet so its Validation tab can be checked rather than trusted.
 
 openpyxl>=3.1      # reads the .xlsx; data_only=True gives cached formula results
+matplotlib>=3.7    # make_figures.py only
 
 # Testing
 # The validator is itself tested, by breaking a copy of the workbook and
