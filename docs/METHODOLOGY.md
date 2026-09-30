@@ -18,7 +18,7 @@ A paper portfolio of 16 stocks across 10 industries. The ledger holds 112 dated 
 | Dashboard | Holdings table built from the ledger with dynamic arrays, KPI strip, sector allocation, rebalancing view |
 | Analytics | Per-holding cost, value, unrealised and realised P&L, return and IRR; sector concentration; scorecard |
 | Risk Analytics | CAPM, risk ratios, parametric and historical VaR, diversification, per-holding risk decomposition |
-| Spartkine | 12 months of daily closes per holding, feeding the sparklines and the Portfolio Series |
+| Price History | 12 months of daily closes per holding, feeding the sparklines and the Portfolio Series |
 | Portfolio Series | Today's holdings valued over the last 12 months, and the risk measures taken from that series |
 | Validation | 26 in-sheet checks with a pass count that treats a cell in error as a failure |
 | WL Dashboard, Watchlist | A 10-stock watchlist scored on P/E, beta and 52-week range |

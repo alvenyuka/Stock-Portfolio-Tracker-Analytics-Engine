@@ -8,7 +8,7 @@ It reads only inputs:
 
 * the Ledger: date, ticker, buy or sell, price, units and amount of every trade;
 * each holding's current price, and the Stocks data type betas;
-* the 12 months of daily closes on the Spartkine sheet, and the SPY closes;
+* the 12 months of daily closes on the Price History sheet, and the SPY closes;
 * the risk-free rate, the market return and the valuation date.
 
 From those it rebuilds holdings net of sales, cost basis at average purchase
@@ -41,7 +41,7 @@ except ImportError:  # pragma: no cover
     sys.exit("openpyxl is required: pip install openpyxl")
 
 DEFAULT = Path(__file__).parent / "Stock Portfolio.xlsx"
-SHEETS = ("Ledger", "Dashboard", "Analytics", "Risk Analytics", "Spartkine", "Portfolio Series")
+SHEETS = ("Ledger", "Dashboard", "Analytics", "Risk Analytics", "Price History", "Portfolio Series")
 
 # Money is carried at full float precision, so the tolerance only absorbs
 # floating-point noise. XIRR is iterative in Excel, so it gets its own tolerance.
@@ -55,7 +55,7 @@ DASH_FIRST, DASH_LAST = 7, 22          # Dashboard holdings rows
 STOCK_FIRST, STOCK_LAST = 10, 25       # Analytics holdings rows
 SECTOR_FIRST, SECTOR_LAST = 29, 38
 HHI_ROW = 39
-SPARK_FIRST = 3                        # Spartkine price rows 3..18, same order as the Dashboard
+SPARK_FIRST = 3                        # Price History rows 3..18, same order as the Dashboard
 
 # Risk Analytics, column C
 RA = {"rf": "C6", "rm": "C7", "erp": "C8", "beta": "C9", "capm": "C10", "alpha": "C11",
@@ -182,7 +182,7 @@ def positions(trades):
 
 def build(wb):
     led, dash, an = wb["Ledger"], wb["Dashboard"], wb["Analytics"]
-    ra, spark, ps = wb["Risk Analytics"], wb["Spartkine"], wb["Portfolio Series"]
+    ra, spark, ps = wb["Risk Analytics"], wb["Price History"], wb["Portfolio Series"]
     checks = []
 
     def add(group, label, derived, reported, **kw):
