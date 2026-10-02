@@ -1,9 +1,8 @@
 # Stock-Portfolio-Tracker-Analytics-Engine
 
-An Excel 365 portfolio tracker for 16 listed stocks, built from a 112-trade ledger, with CAPM and 12-month risk
-analytics and a Python validator that rebuilds all 45 derived figures from the raw inputs. The portfolio
-returned **32.2% a year** since 2019, but **62% of its $211,335 sits in one sector**: a 30% semiconductor
-sell-off would cost about **$39,500**.
+An Excel tracker that works out what a 16-stock portfolio has really earned and where its risk sits, with a
+Python program that re-checks all 45 calculated figures. The portfolio has returned **32.2% a year** since 2019,
+but **62% of its $211,335 sits in semiconductors**, so a 30% fall in that sector would cost about **$39,500**.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Excel 365](https://img.shields.io/badge/Excel-365-217346?logo=microsoftexcel&logoColor=white)](https://www.microsoft.com/en-us/microsoft-365/excel)
