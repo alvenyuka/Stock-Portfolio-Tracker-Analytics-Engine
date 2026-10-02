@@ -65,6 +65,8 @@ def set_cached_value(path: Path, sheet: str, cell_ref: str, value, *, as_error: 
     attrs = re.sub(r'\s+t="[^"]*"', "", attrs)
     if as_error:
         attrs += ' t="e"'
+    elif isinstance(value, str):
+        attrs += ' t="str"'
 
     formula = re.search(r"<f[^>]*>.*?</f>|<f[^>]*/>", body, re.DOTALL)
     keep = formula.group(0) if formula else ""

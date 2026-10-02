@@ -236,6 +236,34 @@ def test_a_volatility_not_measured_from_prices_is_caught(book):
     assert "volatility = sample stdev of daily returns" in out
 
 
+def test_m_squared_with_a_typed_market_volatility_is_caught(book):
+    """M-squared once used a typed 0.155 for market volatility (13.04%); it now uses SPY's
+    realised volatility over the same 12 months."""
+    wb = book()
+    set_cached_value(wb, "Risk Analytics", "C68", 0.13040126424634657)
+    code, out = run(wb)
+    assert code == 1, out
+    assert "M-squared = Sharpe x SPY volatility" in out
+
+
+def test_a_wrong_money_at_risk_figure_is_caught(book):
+    """The README's industry-shock loss lives in the workbook and is rebuilt here."""
+    wb = book()
+    set_cached_value(wb, "Risk Analytics", "C74", 30000.0)
+    code, out = run(wb)
+    assert code == 1, out
+    assert "loss if the largest industry fell by the shock input" in out
+
+
+def test_betas_listed_in_a_different_order_are_caught(book):
+    """Betas are matched to holdings by ticker; a re-sorted risk table must fail."""
+    wb = book()
+    set_cached_value(wb, "Risk Analytics", "B39", "GOOG")
+    code, out = run(wb)
+    assert code == 1, out
+    assert "betas matched by ticker" in out
+
+
 # --------------------------------------------------------------------------
 # The unmodified workbook, and input handling
 # --------------------------------------------------------------------------

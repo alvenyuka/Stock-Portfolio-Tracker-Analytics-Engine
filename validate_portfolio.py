@@ -9,12 +9,19 @@ It reads only inputs:
 * the Ledger: date, ticker, buy or sell, price, units and amount of every trade;
 * each holding's current price, and the Stocks data type betas;
 * the 12 months of daily closes on the Price History sheet, and the SPY closes;
-* the risk-free rate, the market return and the valuation date.
+* the risk-free rate, the market return and the valuation date (one input cell,
+  named ValuationDate, that every IRR and price window ends on).
 
 From those it rebuilds holdings net of sales, cost basis at average purchase
 cost, realised and unrealised P&L, money-weighted returns (XIRR), the 12-month
-back-cast of the current holdings, and every risk ratio, then compares each with
-the figure the workbook reports. It never reads a tick, a banner or a pass count.
+back-cast of the current holdings, every risk ratio and the money-at-risk block,
+then compares each with the figure the workbook reports. It never reads a tick, a
+banner or a pass count.
+
+Cost basis follows the workbook: average cost over all purchases of a stock. A
+running (moving) average, which only uses purchases made before each sale, is
+printed alongside as an advisory, because the two differ for every holding that
+was bought again after a sale.
 
 Usage:
 
@@ -30,10 +37,11 @@ import math
 import statistics
 import sys
 import warnings
+import zipfile
 from collections import defaultdict
 from pathlib import Path
 
-warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
 
 try:
     import openpyxl
@@ -65,7 +73,10 @@ RA = {"rf": "C6", "rm": "C7", "erp": "C8", "beta": "C9", "capm": "C10", "alpha":
 # Portfolio Series, column B
 PS = {"covered": "B10", "share": "B11", "ndays": "B12", "ret12": "B13", "vol": "B14",
       "downside": "B15", "mdd": "B16", "hvar": "B17", "spy12": "B18", "beta_spy": "B19",
-      "te": "B20", "active": "B21", "ir": "B22", "asof": "B24"}
+      "te": "B20", "active": "B21", "ir": "B22", "spy_vol": "B23", "asof": "B24"}
+# Risk Analytics: capital market line and money at risk
+CML = {"cml": "C66", "spread": "C67", "m2": "C68"}
+MONEY = {"shock": "C72", "top_sector": "C73", "loss": "C74", "mdd_usd": "C75", "hvar_usd": "C76"}
 
 
 class Result:
@@ -180,7 +191,33 @@ def positions(trades):
     return p
 
 
-def build(wb):
+def running_average(trades):
+    """Average cost that only uses purchases made before each sale."""
+    st = defaultdict(lambda: [0.0, 0.0, 0.0])          # units, cost, realised
+    for t in sorted(trades, key=lambda t: t["date"]):
+        x = st[t["ticker"]]
+        if t["kind"] == "buy":
+            x[0] += t["units"]
+            x[1] += t["amount"]
+        else:
+            avg = x[1] / x[0]
+            x[2] += t["amount"] - t["units"] * avg
+            x[1] -= t["units"] * avg
+            x[0] -= t["units"]
+    return st
+
+
+def uses_today(path):
+    """Cells whose formula still calls TODAY() (the valuation-date cell excepted)."""
+    hits = 0
+    with zipfile.ZipFile(path) as z:
+        for name in z.namelist():
+            if name.startswith("xl/worksheets/sheet") and name.endswith(".xml"):
+                hits += z.read(name).decode("utf-8", "ignore").count("TODAY()")
+    return hits
+
+
+def build(wb, path=None):
     led, dash, an = wb["Ledger"], wb["Dashboard"], wb["Analytics"]
     ra, spark, ps = wb["Risk Analytics"], wb["Price History"], wb["Portfolio Series"]
     checks = []
@@ -209,7 +246,10 @@ def build(wb):
             continue
         x = pos[tk]
         price = num(dash.cell(dr, 5).value)
-        mv = x["net"] * price if price is not None else None
+        if price is None or not x["cost"]:
+            add(G, f"holding {tk!r} has a current price and a cost basis", None, "missing")
+            continue
+        mv = x["net"] * price
         rows.append({"tk": tk, "x": x, "price": price, "mv": mv,
                      "units": num(dash.cell(dr, 4).value), "a_cost": num(an.cell(ar, 2).value),
                      "a_mv": num(an.cell(ar, 3).value), "a_gain": num(an.cell(ar, 4).value),
@@ -328,13 +368,17 @@ def build(wb):
     # ---------------- CAPM and risk ratios ----------------
     G = "CAPM and risk ratios"
     rf, rm = num(ra[RA["rf"]].value), num(ra[RA["rm"]].value)
-    betas = [num(ra.cell(r, 4).value) for r in range(39, 55)]
+    ra_tickers = [ra.cell(r, 2).value for r in range(39, 39 + len(rows))]
+    add(G, "risk decomposition lists the holdings in Dashboard order (betas matched by ticker)",
+        0.0, float(sum(a != r["tk"] for a, r in zip(ra_tickers, rows))))
+    betas = [num(ra.cell(r, 4).value) for r in range(39, 39 + len(rows))]
     beta = sum(w * b for w, b in zip(weights, betas))
     capm = rf + beta * (rm - rf)
     add(G, "equity risk premium = Rm - Rf", rm - rf, num(ra[RA["erp"]].value))
     add(G, "portfolio beta = weighted average of holding betas", beta, num(ra[RA["beta"]].value))
     add(G, "CAPM expected return = Rf + beta x (Rm - Rf)", capm, num(ra[RA["capm"]].value))
-    add(G, "Jensen's alpha = 12m return - CAPM expected return", ret12 - capm, num(ra[RA["alpha"]].value))
+    add(G, "excess over CAPM expected return (alpha at the assumed Rm) = 12m return - CAPM return",
+        ret12 - capm, num(ra[RA["alpha"]].value))
     add(G, "Treynor = (12m return - Rf) / beta", (ret12 - rf) / beta, num(ra[RA["treynor"]].value))
     add(G, "Sharpe = (12m return - Rf) / volatility", (ret12 - rf) / vol, num(ra[RA["sharpe"]].value))
     add(G, "Sortino = (12m return - Rf) / downside deviation", (ret12 - rf) / downside,
@@ -349,10 +393,43 @@ def build(wb):
     add(G, "expected shortfall 95% = CAPM return - 2.063 x volatility", capm - 2.063 * vol,
         num(ra[RA["cvar"]].value))
 
+    G = "Market line and money at risk"
+    if all(v is not None for v in spy):
+        spy_vol = statistics.stdev(srets) * math.sqrt(TRADING_DAYS)
+        cml = rf + (spy12 - rf) / spy_vol * vol
+        add(G, "SPY volatility = sample stdev of SPY daily returns x sqrt(252)", spy_vol,
+            num(ps[PS["spy_vol"]].value))
+        add(G, "capital market line return at the portfolio's volatility (SPY, 12m)", cml,
+            num(ra[CML["cml"]].value))
+        add(G, "portfolio vs CML spread = 12m return - CML return", ret12 - cml, num(ra[CML["spread"]].value))
+        add(G, "M-squared = Sharpe x SPY volatility + Rf - SPY return", (ret12 - rf) / vol * spy_vol + rf - spy12,
+            num(ra[CML["m2"]].value))
     top = max(rows, key=lambda r: r["mv"])
     top_sector = max(sectors, key=lambda s: s["mv"])
+    shock = num(ra[MONEY["shock"]].value)
+    add(G, "largest industry's market value", top_sector["mv"], num(ra[MONEY["top_sector"]].value))
+    add(G, "loss if the largest industry fell by the shock input", (shock or 0) * top_sector["mv"],
+        num(ra[MONEY["loss"]].value))
+    add(G, "worst 12-month drawdown in dollars, current holdings", mdd_usd, num(ra[MONEY["mdd_usd"]].value))
+    add(G, "1-day historical VaR 95% in dollars, on full portfolio value", hvar * mv_total,
+        num(ra[MONEY["hvar_usd"]].value))
+    if path is not None:
+        add(G, "no formula calls TODAY(); every date window ends on ValuationDate", 0.0, float(uses_today(path)))
+
+    ra_cost = running_average(trades)
+    held = {r["tk"] for r in rows}
     meta = {"holdings": n, "sectors": len(sectors), "mv_total": mv_total, "asof": asof,
-            "covered": covered, "ndays": ndays,
+            "covered": covered, "ndays": ndays, "since": min(t["date"] for t in trades).year,
+            "shock": shock or 0.0,
+            "running": {"realised": sum(v[2] for v in ra_cost.values()),
+                        "cost": sum(v[1] for k, v in ra_cost.items() if k in held)},
+            "pooled": {"realised": realised_total, "cost": cost_total},
+            "headline": {"irr": xirr(flows + [(asof, mv_total)]), "ret12": ret12,
+                         "spy12": spy12 if all(v is not None for v in spy) else None,
+                         "vol": vol, "mdd": mdd, "sharpe": (ret12 - rf) / vol,
+                         "beta_spy": beta_spy if all(v is not None for v in spy) else None,
+                         "te": te if all(v is not None for v in spy) else None,
+                         "eff_pos": 1 / sum(w * w for w in weights)},
             "money": {"total_gain": mv_total + sells - buys, "realised": realised_total,
                       "hvar_usd": hvar * mv_total, "mdd_usd": mdd_usd,
                       "top_holding": (top["tk"], top["mv"], top["mv"] / mv_total),
@@ -366,7 +443,7 @@ def main(argv):
         sys.exit(f"workbook not found: {path}")
 
     wb = load(path)
-    checks, meta = build(wb)
+    checks, meta = build(wb, path)
 
     print(f"Workbook: {path.name}   Valuation date: {meta['asof']}")
     print(f"Holdings: {meta['holdings']}   Sectors: {meta['sectors']}   "
@@ -400,16 +477,35 @@ def main(argv):
     m = meta["money"]
     tk, tmv, tw = m["top_holding"]
     sn, smv, sw = m["top_sector"]
+    h = meta["headline"]
+    print()
+    print("  Headline figures (re-derived above)")
+    print(f"    annual return since {meta['since']} (XIRR)                  {h['irr']:>11.1%}")
+    if h["spy12"] is not None:
+        print(f"    12-month return, current holdings vs SPY       {h['ret12']:>6.1%} vs {h['spy12']:.1%}")
+    print(f"    volatility / max drawdown (12m)                {h['vol']:>6.1%} / {h['mdd']:.1%}")
+    print(f"    Sharpe ratio                                    {h['sharpe']:>11.2f}")
+    if h["beta_spy"] is not None:
+        print(f"    beta vs SPY / tracking error                   {h['beta_spy']:>6.2f} / {h['te']:.1%}")
+    print(f"    effective number of holdings                    {h['eff_pos']:>11.1f}")
     print()
     print("  Money at risk (from the figures above)")
-    print(f"    total gain since 2019 (realised + unrealised)   {m['total_gain']:>12,.0f}")
+    print(f"    total gain since {meta['since']} (realised + unrealised)   {m['total_gain']:>12,.0f}")
     print(f"    realised P&L on sales                           {m['realised']:>12,.0f}")
-    print(f"    1-day historical VaR, 95%                        {m['hvar_usd']:>12,.0f}")
+    print(f"    1-day historical VaR, 95% (on full value)        {m['hvar_usd']:>12,.0f}")
     print(f"    worst 12-month drawdown, current holdings        {m['mdd_usd']:>12,.0f}")
     print(f"    largest holding {tk:<6} ({tw:.1%} of value)          {tmv:>12,.0f}")
     print(f"    largest sector ({sw:.1%} of value)                 {smv:>12,.0f}  {sn}")
-    print(f"    loss if that sector fell 30%                     {0.3 * smv:>12,.0f}"
-          f"  ({0.3 * sw:.1%} of the portfolio)")
+    k = meta["shock"]
+    print(f"    loss if that sector fell {k:.0%}                     {k * smv:>12,.0f}"
+          f"  ({k * sw:.1%} of the portfolio)")
+    run, pool = meta["running"], meta["pooled"]
+    print()
+    print("  Advisory: cost basis method (not a pass/fail check)")
+    print(f"    realised P&L    pooled average {pool['realised']:>10,.0f}   running average {run['realised']:>10,.0f}")
+    print(f"    cost basis      pooled average {pool['cost']:>10,.0f}   running average {run['cost']:>10,.0f}")
+    print("    The workbook pools every purchase of a stock; a running average uses only")
+    print("    purchases made before each sale. Total gain is the same under both.")
     return 0
 
 
