@@ -80,6 +80,8 @@ MONEY = {"shock": "C72", "top_sector": "C73", "loss": "C74", "mdd_usd": "C75", "
 
 
 class Result:
+    """One figure re-derived from the ledger or prices, compared with the figure the workbook reports."""
+
     def __init__(self, group, label, derived, reported, tol=None, note=None):
         self.group, self.label = group, label
         self.derived, self.reported = derived, reported
@@ -87,6 +89,7 @@ class Result:
 
     @property
     def ok(self):
+        """True when both are numbers and agree within `tol`, or within the default absolute and relative tolerance."""
         d, r = self.derived, self.reported
         if not isinstance(d, (int, float)) or not isinstance(r, (int, float)):
             return False
@@ -96,6 +99,7 @@ class Result:
 
     @property
     def detail(self):
+        """One-line description of the comparison, for the report."""
         d, r = self.derived, self.reported
         if not isinstance(r, (int, float)):
             return f"workbook reports {r!r}, which is not a number"
@@ -105,10 +109,12 @@ class Result:
 
 
 def num(v):
+    """The value if it is a real number (not a bool), else None."""
     return v if isinstance(v, (int, float)) and not isinstance(v, bool) else None
 
 
 def as_date(v):
+    """A date from a datetime, a date, or an Excel serial number; None otherwise."""
     if isinstance(v, dt.datetime):
         return v.date()
     if isinstance(v, dt.date):
@@ -152,6 +158,7 @@ def percentile_inc(xs, p):
 
 
 def load(path: Path):
+    """Open the workbook with cached values and stop with a message if a required sheet is missing."""
     wb = openpyxl.load_workbook(path, data_only=True)
     missing = [s for s in SHEETS if s not in wb.sheetnames]
     if missing:
@@ -160,6 +167,7 @@ def load(path: Path):
 
 
 def read_ledger(ws):
+    """Every buy and sell row of the Ledger sheet as a dict of date, kind, price, units, amount and ticker."""
     trades = []
     for r in range(LEDGER_FIRST_ROW, ws.max_row + 1):
         kind = ws.cell(r, 4).value
@@ -172,6 +180,7 @@ def read_ledger(ws):
 
 
 def positions(trades):
+    """Per-ticker totals from the trades: units and amounts bought and sold, net units, pooled average cost, cost basis, realised gain and cash flows."""
     p = defaultdict(lambda: {"bu": 0.0, "ba": 0.0, "su": 0.0, "sa": 0.0, "flows": []})
     for t in trades:
         x = p[t["ticker"]]
@@ -218,6 +227,10 @@ def uses_today(path):
 
 
 def build(wb, path=None):
+    """Re-derive every checked figure from the ledger and price history and pair it with the workbook's figure.
+
+    Returns the list of Result checks and a dict of headline figures for the report.
+    """
     led, dash, an = wb["Ledger"], wb["Dashboard"], wb["Analytics"]
     ra, spark, ps = wb["Risk Analytics"], wb["Price History"], wb["Portfolio Series"]
     checks = []
@@ -438,6 +451,7 @@ def build(wb, path=None):
 
 
 def main(argv):
+    """Run the checks on the workbook, print the report and return the exit code (0 when all pass)."""
     path = Path(argv[1]) if len(argv) > 1 else DEFAULT
     if not path.exists():
         sys.exit(f"workbook not found: {path}")
@@ -510,6 +524,7 @@ def main(argv):
 
 
 def _wrap(text, width):
+    """Split text into lines of at most `width` characters, breaking between words."""
     words, line, out = text.split(), "", []
     for w in words:
         if len(line) + len(w) + 1 > width:

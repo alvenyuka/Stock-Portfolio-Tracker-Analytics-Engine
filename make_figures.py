@@ -25,6 +25,7 @@ BLUE, GREY, INK = "#2b6cb0", "#a0aec0", "#2d3748"
 
 
 def main() -> None:
+    """Draw the README charts from the workbook's cached values."""
     wb = load(DEFAULT)
     spark, ps, an = wb["Price History"], wb["Portfolio Series"], wb["Analytics"]
 
