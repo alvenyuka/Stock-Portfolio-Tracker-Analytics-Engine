@@ -143,9 +143,45 @@ changed value; the valuation date was set to the date of the last recalculation,
 | Leftover "CAGR" labels, an unlabelled second beta, an assumed Rm called a benchmark | Labels contradicted the formulas | Relabelled: IRR, vendor vs SPY beta, "assumed market return" |
 | The in-workbook README described a $10,000-a-year plan with a 35% technology cap, GICS sectors and auto-extending formulas | None of it matched the ledger or the sheets | Rewritten to describe the ledger, the industry source and the 16-row blocks |
 
+## Rebalancing scenarios
+
+The README's recommendation, reduce the NVIDIA position, is priced by `scenarios.py` (tests in
+`tests/test_scenarios.py`). It reads the holdings, average costs and daily closes the validator reads, and
+measures any set of units with the validator's formulas. A test requires the unchanged portfolio to reproduce
+the workbook's own sector-shock loss, drawdown, VaR, effective number of holdings and volatility, so the
+scenarios rest on the validated arithmetic rather than a second implementation.
+
+Three policies, each keeping the total value:
+
+| Policy | Rule |
+|---|---|
+| NVIDIA capped at 25% | NVIDIA sold down to 25% of value; the proceeds spread over the other holdings in proportion to their value |
+| No holding above 20% | the same rule applied to every holding, repeated until nothing is above the cap |
+| Semiconductors capped at 40% | NVIDIA and AMD scaled down together, keeping their mix; the freed value spread over the rest |
+
+Cost of each rebalance: realised gain = units sold x (price - average cost), tax = 15% of the net realised gain
+(never negative), trading cost = 0.10% of the value bought and sold. Both rates are assumptions, constants at
+the top of `scenarios.py`. Results (`outputs/scenarios.json`):
+
+| | Current | NVIDIA 25% | Holdings 20% | Semis 40% |
+|---|---:|---:|---:|---:|
+| Loss if semiconductors fell 30% | 39,480 | 30,730 | 25,360 | 25,360 |
+| 1-day historical VaR 95% | 5,645 | 4,591 | 4,312 | 4,189 |
+| Worst 12-month drawdown | 25,279 | 22,256 | 22,185 | 22,698 |
+| Volatility, 12-month back-cast | 26.0% | 23.3% | 21.0% | 20.0% |
+| Beta vs SPY | 1.64 | 1.55 | 1.44 | 1.37 |
+| Effective number of holdings | 4.1 | 7.0 | 8.7 | 7.6 |
+| 12-month back-cast return | 35.7% | 39.9% | 34.9% | 26.5% |
+| Tax + trading cost | 0 | 6,131 | 7,657 | 6,723 |
+
+Per dollar of cost, the semiconductor cap removes the most shock loss (about $0.48 of cost per dollar removed,
+against $0.70 for the NVIDIA cap alone, whose proceeds partly flow into AMD). The back-cast returns describe how
+each mix would have behaved over the last year, not a forecast.
+
 ## Limitations
 
-- **Paper portfolio.** The trades are hypothetical; fees, taxes, slippage and spreads are not modelled.
+- **Paper portfolio.** The trades are hypothetical; fees, taxes, slippage and spreads are not modelled in the
+  workbook. The rebalancing scenarios add an assumed tax and trading cost for the trades they propose.
 - **Back-cast, not history.** The 12-month series values today's holdings over the past year. It describes
   the risk of the current portfolio, not the realised path of the portfolio as it was traded.
 - **One holding without price history** is excluded from the series (2.1% of value).

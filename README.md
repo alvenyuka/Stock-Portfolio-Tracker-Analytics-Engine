@@ -28,7 +28,35 @@ Measured from the dated trades and a year of daily prices, the portfolio's expos
 
 With an effective number of holdings of about 4, a 30% semiconductor fall would take out nearly a fifth of the
 portfolio, seven times the loss the 1-day VaR puts on an ordinary bad day. Reducing the NVIDIA position is the
-lever that changes this most.
+lever that changes this most; the next section prices it.
+
+## What reducing the concentration would cost, and buy
+
+`scenarios.py` rebalances the current holdings under three policies and measures each with the validator's own
+arithmetic (the unchanged portfolio reproduces the workbook's figures exactly, and a test holds it to that).
+Sold value is spread over the other holdings in proportion to their value. Two assumptions drive the cost line:
+15% tax on net realised gains and 0.10% trading cost on the value traded.
+
+| Policy | Current | NVIDIA capped at 25% | No holding above 20% | Semiconductors capped at 40% |
+|---|---:|---:|---:|---:|
+| Largest holding / semiconductors | 45.1% / 62.3% | 25.0% / 48.5% | 20.0% / 40.0% | 29.0% / 40.0% |
+| Effective number of holdings | 4.1 | 7.0 | 8.7 | 7.6 |
+| Loss if semiconductors fell 30% | $39,480 | $30,730 | $25,360 | $25,360 |
+| 1-day VaR (95%) | $5,645 | $4,591 | $4,312 | $4,189 |
+| Volatility / beta vs SPY (12-month back-cast) | 26.0% / 1.64 | 23.3% / 1.55 | 21.0% / 1.44 | 20.0% / 1.37 |
+| Value sold | 0 | $42,452 | $53,019 | $47,066 |
+| One-off cost: tax + trading | 0 | $6,131 | $7,657 | $6,723 |
+
+![Money at risk and one-off cost under each rebalancing policy](figures/rebalancing.png)
+
+Capping semiconductors at 40% buys the most risk reduction per dollar: about $6,700 of tax and costs removes
+$14,120 from the semiconductor-shock loss and brings volatility down to 20%. Capping NVIDIA alone costs about
+$6,100 and removes $8,750, because the money sold out of NVIDIA partly flows into AMD, the other semiconductor
+holding. Most of every cost is tax: NVIDIA was bought at an average of $11.57 against a price of $228.86, so
+trimming it realises a large gain. The price of the lower risk shows in the back-cast too: over the last 12
+months the semiconductor cap would have earned 26.5% against 35.7% for the current mix. The back-cast shows how
+each mix would have behaved, not a forecast, so the choice between the policies is a judgement about how much of
+the semiconductor bet the investor wants to keep.
 
 ## Performance
 
@@ -106,6 +134,8 @@ the workbook one cell at a time to prove each fault is caught.
 - **Back-cast risk.** The 12-month figures value today's holdings historically, which describes current
   exposure rather than the returns actually earned over that year.
 - **The sector shock is a scenario, not a forecast**, and applies one shock to the whole sector.
+- **Rebalancing costs rest on two assumptions** (15% tax on net realised gains, 0.10% trading cost); both are
+  constants at the top of `scenarios.py`, to be set to the investor's own.
 
 ## Files and how to run
 
@@ -113,6 +143,7 @@ the workbook one cell at a time to prove each fault is caught.
 pip install -r requirements.txt
 python validate_portfolio.py      # rebuild every figure and print the money at risk
 python -m pytest                  # prove the validator catches injected faults
+python scenarios.py               # price the rebalancing policies (writes outputs/scenarios.json)
 python make_figures.py            # redraw the README charts
 ```
 
@@ -122,9 +153,10 @@ Open `Stock Portfolio.xlsx` in Excel 365 and run Data, Refresh All for live pric
 Stock Portfolio.xlsx      the workbook: ledger, dashboard, analytics, risk, price history, portfolio series,
                           watchlist, validation
 validate_portfolio.py     independent validator: 55 figures rebuilt, money at risk
+scenarios.py              rebalancing policies: money at risk, concentration and the tax cost of each
 make_figures.py           README charts drawn from the workbook's stored values
 figures/                  charts and dashboard screenshots
-tests/                    18 fault-injection tests for the validator
+tests/                    18 fault-injection tests for the validator, 7 for the scenarios
 docs/METHODOLOGY.md       every definition and the review history
 ```
 
