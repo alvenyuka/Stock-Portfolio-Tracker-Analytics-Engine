@@ -1,10 +1,12 @@
-# Stock Portfolio Tracker and Risk Analytics: what a portfolio really earned and where its risk sits
+# Stock Portfolio Risk Tracker
 
-**An Excel 365 tracker that turns 112 dated trades in 16 stocks into money-weighted returns, 12-month risk
-analytics and money at risk, with a Python validator that rebuilds all 55 calculated figures outside Excel. The
-portfolio has returned 32.2% a year since 2019, but 62% of its $211,335 sits in semiconductors, so a 30% fall in
-that sector would cost about $39,500. 25 tests, 15 of them corrupting the workbook on purpose, prove the
-checks catch errors.**
+32.2% a year since 2019, with 62% of the money in one sector.
+
+| At a glance | |
+|---|---|
+| **Who decides** | An investor deciding whether to trim a winning position. |
+| **Result** | 62% of the $211,335 portfolio sits in semiconductors, so a 30% fall in that sector would cost about $39,500. |
+| **Proof** | 112 dated trades in 16 stocks, 55 calculated figures rebuilt outside Excel by a Python validator, 25 tests (15 corrupt the workbook on purpose). |
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Excel 365](https://img.shields.io/badge/Excel-365-217346?logo=microsoftexcel&logoColor=white)](https://www.microsoft.com/en-us/microsoft-365/excel)
@@ -57,6 +59,8 @@ flowchart LR
 | Tests and CI | pytest with fault injection, GitHub Actions | Python 3.13 in CI |
 
 ## Results
+
+An Excel 365 tracker that turns 112 dated trades in 16 stocks into money-weighted returns, 12-month risk analytics and money at risk, with a Python validator that rebuilds all 55 calculated figures outside Excel. The portfolio has returned 32.2% a year since 2019, but 62% of its $211,335 sits in semiconductors, so a 30% fall in that sector would cost about $39,500. 25 tests, 15 of them corrupting the workbook on purpose, prove the checks catch errors.
 
 - 112 trades (80 buys, 32 sells) from 2019 to 2025; 16 holdings across 10 sectors; 251 trading days of prices.
 - 55 calculated figures rebuilt outside Excel; 26 in-sheet tests; 25 Python tests (18 for the validator, 15 of
