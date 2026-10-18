@@ -1,0 +1,4 @@
+expression DataFolder = "C:\Stock-Portfolio-Tracker-Analytics-Engine\powerbi-data\" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 6f1d2c7a-3b8e-4d61-9a0f-2e5b7c4d8a13
+
+	annotation PBI_ResultType = Text

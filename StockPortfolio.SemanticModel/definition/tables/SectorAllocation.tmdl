@@ -1,0 +1,52 @@
+table SectorAllocation
+	lineageTag: c1c45b3b-43d1-4d5f-bcb6-81e41ff8bdbf
+
+	column Industry
+		dataType: string
+		lineageTag: e58cb22b-39f9-4f55-8b01-45616a27eda6
+		summarizeBy: none
+		sourceColumn: Industry
+
+		annotation SummarizationSetBy = Automatic
+
+	column MarketValue
+		dataType: double
+		formatString: \$#,0;-\$#,0;\$#,0
+		lineageTag: 53eeb82e-2148-4105-b354-04afa2aa7ceb
+		summarizeBy: sum
+		sourceColumn: MarketValue
+
+		annotation SummarizationSetBy = Automatic
+
+	column WeightPct
+		dataType: double
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 95da9f82-eddd-40f6-9194-b43535e6e9ab
+		summarizeBy: sum
+		sourceColumn: WeightPct
+
+		annotation SummarizationSetBy = Automatic
+
+	column HHIContrib
+		dataType: double
+		formatString: 0.000
+		lineageTag: ec815b52-803a-4b14-90a4-10078920b40b
+		summarizeBy: sum
+		sourceColumn: HHIContrib
+
+		annotation SummarizationSetBy = Automatic
+
+	partition SectorAllocation = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(DataFolder & "SectorAllocation.csv"),[Delimiter=",", Columns=4, Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Industry", type text}, {"MarketValue", type number}, {"WeightPct", type number}, {"HHIContrib", type number}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

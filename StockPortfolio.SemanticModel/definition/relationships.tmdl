@@ -1,0 +1,8 @@
+relationship 0eef118e-98d7-42da-bf46-452ed755fc50
+	fromColumn: Ledger.Ticker
+	toColumn: Holdings.Ticker
+
+relationship a657bdbe-6f4c-45f1-89d2-218c84898120
+	fromColumn: Holdings.Industry
+	toColumn: SectorAllocation.Industry
+

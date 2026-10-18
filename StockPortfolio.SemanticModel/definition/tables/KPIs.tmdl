@@ -1,0 +1,185 @@
+table KPIs
+	lineageTag: e265a96f-28c3-4d84-a7ed-dd50eaac510d
+
+	column PortfolioValue
+		dataType: double
+		formatString: \$#,0;-\$#,0;\$#,0
+		lineageTag: 99c3c527-7a23-4b56-87be-bfe3a97e693c
+		summarizeBy: sum
+		sourceColumn: PortfolioValue
+
+		annotation SummarizationSetBy = Automatic
+
+	column CostBasis
+		dataType: double
+		formatString: \$#,0;-\$#,0;\$#,0
+		lineageTag: dcdeb740-70cc-4b37-8cf5-802fa4c6a58a
+		summarizeBy: sum
+		sourceColumn: CostBasis
+
+		annotation SummarizationSetBy = Automatic
+
+	column UnrealisedPnL
+		dataType: double
+		formatString: \$#,0;-\$#,0;\$#,0
+		lineageTag: 5b4cdc90-c066-4d1d-91b4-8da605f35015
+		summarizeBy: sum
+		sourceColumn: UnrealisedPnL
+
+		annotation SummarizationSetBy = Automatic
+
+	column TotalReturnPct
+		dataType: double
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: aee7c888-31fd-42f6-ac3c-71420cc122ac
+		summarizeBy: average
+		sourceColumn: TotalReturnPct
+
+		annotation SummarizationSetBy = Automatic
+
+	column AnnReturnIRR
+		dataType: double
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: da1b3bdc-22a6-4fc4-9e06-27db3562ad26
+		summarizeBy: average
+		sourceColumn: AnnReturnIRR
+
+		annotation SummarizationSetBy = Automatic
+
+	column HHIIndex
+		dataType: double
+		formatString: 0.000
+		lineageTag: bccae190-99ab-48ba-9e1c-d75a9527268d
+		summarizeBy: average
+		sourceColumn: HHIIndex
+
+		annotation SummarizationSetBy = Automatic
+
+	column DailyPnL
+		dataType: double
+		formatString: \$#,0.00;-\$#,0.00;\$#,0.00
+		lineageTag: dc31d193-9b5c-431f-8967-6085b69a8620
+		summarizeBy: sum
+		sourceColumn: DailyPnL
+
+		annotation SummarizationSetBy = Automatic
+
+	column SharpeRatio
+		dataType: double
+		formatString: 0.00
+		lineageTag: 0f1a3b81-8e55-44b1-895f-5bdbd8514cf2
+		summarizeBy: average
+		sourceColumn: SharpeRatio
+
+		annotation SummarizationSetBy = Automatic
+
+	column WinRatePct
+		dataType: double
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: b8744b06-0d50-4e22-bd70-b47ced52cf4d
+		summarizeBy: average
+		sourceColumn: WinRatePct
+
+		annotation SummarizationSetBy = Automatic
+
+	column AvgReturnPct
+		dataType: double
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 4813e94a-e86a-408b-9cc6-ef9d21df3585
+		summarizeBy: average
+		sourceColumn: AvgReturnPct
+
+		annotation SummarizationSetBy = Automatic
+
+	column MaxDrawdownPct
+		dataType: double
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: b7e8323e-798e-4fd7-a190-8ea2bcc7a0b1
+		summarizeBy: average
+		sourceColumn: MaxDrawdownPct
+
+		annotation SummarizationSetBy = Automatic
+
+	column PortfolioBeta
+		dataType: double
+		formatString: 0.00
+		lineageTag: 2b80b622-8c77-44b6-9a1e-cd10ebd88596
+		summarizeBy: average
+		sourceColumn: PortfolioBeta
+
+		annotation SummarizationSetBy = Automatic
+
+	column TreynorRatio
+		dataType: double
+		formatString: 0.000
+		lineageTag: eb1ca8b9-e99f-45c9-adc2-b271a8a8b6bf
+		summarizeBy: average
+		sourceColumn: TreynorRatio
+
+		annotation SummarizationSetBy = Automatic
+
+	column Top3ConcentrationPct
+		dataType: double
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 34a1b8cc-29f9-4674-a029-bd1af9563407
+		summarizeBy: average
+		sourceColumn: Top3ConcentrationPct
+
+		annotation SummarizationSetBy = Automatic
+
+
+	column SortinoRatio
+		dataType: double
+		formatString: 0.00
+		lineageTag: 5f2c83b0-3650-47d7-90cc-d9caaf68cbcc
+		summarizeBy: average
+		sourceColumn: SortinoRatio
+
+		annotation SummarizationSetBy = Automatic
+
+	column CalmarRatio
+		dataType: double
+		formatString: 0.00
+		lineageTag: 680dbefd-5f2a-49ba-bf94-a7b066560b79
+		summarizeBy: average
+		sourceColumn: CalmarRatio
+
+		annotation SummarizationSetBy = Automatic
+
+	column BestStock
+		dataType: string
+		lineageTag: eed5b114-9ee8-4e8c-ac7b-0bf3cd539c68
+		summarizeBy: none
+		sourceColumn: BestStock
+
+		annotation SummarizationSetBy = Automatic
+
+	column WorstStock
+		dataType: string
+		lineageTag: 5390d4a7-a394-4088-8670-44541631aba5
+		summarizeBy: none
+		sourceColumn: WorstStock
+
+		annotation SummarizationSetBy = Automatic
+
+	column PortfolioGrade
+		dataType: string
+		lineageTag: 34632f06-8254-4a40-99fc-c251c1998c55
+		summarizeBy: none
+		sourceColumn: PortfolioGrade
+
+		annotation SummarizationSetBy = Automatic
+
+	partition KPIs = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(DataFolder & "KPIs.csv"),[Delimiter=",", Columns=19, Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"PortfolioValue", type number}, {"CostBasis", type number}, {"UnrealisedPnL", type number}, {"TotalReturnPct", type number}, {"AnnReturnIRR", type number}, {"HHIIndex", type number}, {"DailyPnL", type number}, {"SharpeRatio", type number}, {"WinRatePct", type number}, {"AvgReturnPct", type number}, {"MaxDrawdownPct", type number}, {"PortfolioBeta", type number}, {"TreynorRatio", type number}, {"Top3ConcentrationPct", type number}, {"SortinoRatio", type number}, {"CalmarRatio", type number}, {"BestStock", type text}, {"WorstStock", type text}, {"PortfolioGrade", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation

@@ -1,0 +1,59 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.4.0/schema.json",
+  "name": "tableHoldings",
+  "position": {
+    "x": 20,
+    "y": 140,
+    "z": 0,
+    "width": 620,
+    "height": 380,
+    "tabOrder": 4
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": { "Column": { "Expression": { "SourceRef": { "Entity": "Holdings" } }, "Property": "Ticker" } },
+              "queryRef": "Holdings.Ticker",
+              "nativeQueryRef": "Ticker"
+            },
+            {
+              "field": { "Column": { "Expression": { "SourceRef": { "Entity": "Holdings" } }, "Property": "Industry" } },
+              "queryRef": "Holdings.Industry",
+              "nativeQueryRef": "Industry"
+            },
+            {
+              "field": { "Column": { "Expression": { "SourceRef": { "Entity": "Holdings" } }, "Property": "MarketValue" } },
+              "queryRef": "Holdings.MarketValue",
+              "nativeQueryRef": "Market Value"
+            },
+            {
+              "field": { "Column": { "Expression": { "SourceRef": { "Entity": "Holdings" } }, "Property": "ReturnPct" } },
+              "queryRef": "Holdings.ReturnPct",
+              "nativeQueryRef": "Return %"
+            },
+            {
+              "field": { "Column": { "Expression": { "SourceRef": { "Entity": "Holdings" } }, "Property": "WeightPct" } },
+              "queryRef": "Holdings.WeightPct",
+              "nativeQueryRef": "Weight %"
+            },
+            {
+              "field": { "Column": { "Expression": { "SourceRef": { "Entity": "Holdings" } }, "Property": "RiskScore" } },
+              "queryRef": "Holdings.RiskScore",
+              "nativeQueryRef": "Risk Score"
+            },
+            {
+              "field": { "Column": { "Expression": { "SourceRef": { "Entity": "Holdings" } }, "Property": "Signal" } },
+              "queryRef": "Holdings.Signal",
+              "nativeQueryRef": "Signal"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {}
+  }
+}

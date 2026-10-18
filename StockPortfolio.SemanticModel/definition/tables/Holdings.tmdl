@@ -1,0 +1,158 @@
+table Holdings
+	lineageTag: 675fb816-980d-481d-996f-fc3a5fdc6db5
+
+	column Ticker
+		dataType: string
+		lineageTag: 0d7ae03b-b49a-44f1-a7cf-bbf8ab36ecd2
+		summarizeBy: none
+		sourceColumn: Ticker
+
+		annotation SummarizationSetBy = Automatic
+
+	column Industry
+		dataType: string
+		lineageTag: 31356273-8931-4961-ad00-213031b7f25d
+		summarizeBy: none
+		sourceColumn: Industry
+
+		annotation SummarizationSetBy = Automatic
+
+	column Units
+		dataType: double
+		lineageTag: ec343641-8e20-477a-a773-0c1625f50be6
+		summarizeBy: sum
+		sourceColumn: Units
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column CurrentPrice
+		dataType: double
+		formatString: \$#,0.00;-\$#,0.00;\$#,0.00
+		lineageTag: a8c008ae-020b-44d0-9814-767a0c2cc472
+		summarizeBy: average
+		sourceColumn: CurrentPrice
+
+		annotation SummarizationSetBy = Automatic
+
+	column MarketValue
+		dataType: double
+		formatString: \$#,0;-\$#,0;\$#,0
+		lineageTag: 37a88df2-06a0-4f07-b0b7-f1245c886dd7
+		summarizeBy: sum
+		sourceColumn: MarketValue
+
+		annotation SummarizationSetBy = Automatic
+
+	column TodaysChangeDollar
+		dataType: double
+		formatString: \$#,0.00;-\$#,0.00;\$#,0.00
+		lineageTag: b85802e1-e360-427e-a8c4-cec2418db3f5
+		summarizeBy: sum
+		sourceColumn: TodaysChangeDollar
+
+		annotation SummarizationSetBy = Automatic
+
+	column TodaysChangePct
+		dataType: double
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 1212efdb-183f-4355-80a5-1cbabc8cb31b
+		summarizeBy: average
+		sourceColumn: TodaysChangePct
+
+		annotation SummarizationSetBy = Automatic
+
+	column GainLoss
+		dataType: double
+		formatString: \$#,0;-\$#,0;\$#,0
+		lineageTag: 86875a02-b63a-4c94-a3cf-da76bbfe8538
+		summarizeBy: sum
+		sourceColumn: GainLoss
+
+		annotation SummarizationSetBy = Automatic
+
+	column ReturnPct
+		dataType: double
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: af83ba9f-7c43-4316-aff0-2760328487cb
+		summarizeBy: average
+		sourceColumn: ReturnPct
+
+		annotation SummarizationSetBy = Automatic
+
+	column WeightPct
+		dataType: double
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 04475d00-50ca-460b-a7ce-e89900485e1c
+		summarizeBy: sum
+		sourceColumn: WeightPct
+
+		annotation SummarizationSetBy = Automatic
+
+	column CostBasis
+		dataType: double
+		formatString: \$#,0;-\$#,0;\$#,0
+		lineageTag: d22fb197-da9f-4678-8c7f-ac0cd70e1565
+		summarizeBy: sum
+		sourceColumn: CostBasis
+
+		annotation SummarizationSetBy = Automatic
+
+	column AvgBuyPrice
+		dataType: double
+		formatString: \$#,0.00;-\$#,0.00;\$#,0.00
+		lineageTag: f0850370-2a03-4570-b7d3-3b1f9a0a4d22
+		summarizeBy: average
+		sourceColumn: AvgBuyPrice
+
+		annotation SummarizationSetBy = Automatic
+
+	column PriceToCost
+		dataType: double
+		formatString: 0.00"x"
+		lineageTag: 56da6b01-3a69-42a9-a212-2462ccd93110
+		summarizeBy: average
+		sourceColumn: PriceToCost
+
+		annotation SummarizationSetBy = Automatic
+
+	column AnnReturn
+		dataType: double
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 42e1e279-c531-4947-9a53-0d5cd0cb126c
+		summarizeBy: average
+		sourceColumn: AnnReturn
+
+		annotation SummarizationSetBy = Automatic
+
+	column RiskScore
+		dataType: string
+		lineageTag: 947a54fe-1722-42ef-960c-c0d8ebaeab56
+		summarizeBy: none
+		sourceColumn: RiskScore
+
+		annotation SummarizationSetBy = Automatic
+
+	column Signal
+		dataType: string
+		lineageTag: 8a9ae269-f91b-4e25-9d18-0392b74b1928
+		summarizeBy: none
+		sourceColumn: Signal
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Holdings = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(DataFolder & "Holdings.csv"),[Delimiter=",", Columns=16, Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Ticker", type text}, {"Industry", type text}, {"Units", type number}, {"CurrentPrice", type number}, {"MarketValue", type number}, {"TodaysChangeDollar", type number}, {"TodaysChangePct", type number}, {"GainLoss", type number}, {"ReturnPct", type number}, {"WeightPct", type number}, {"CostBasis", type number}, {"AvgBuyPrice", type number}, {"PriceToCost", type number}, {"AnnReturn", type number}, {"RiskScore", type text}, {"Signal", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

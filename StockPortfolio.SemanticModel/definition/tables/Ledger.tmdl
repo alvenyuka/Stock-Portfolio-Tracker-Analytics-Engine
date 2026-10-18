@@ -1,0 +1,70 @@
+table Ledger
+	lineageTag: 377fc61d-7a72-4491-a0a1-1ae5bf23ba1f
+
+	column Date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: e96d0e81-bc56-4539-967a-530725265b87
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TransactionType
+		dataType: string
+		lineageTag: 2d4acc48-3a4f-4b69-ba40-75e244102e4c
+		summarizeBy: none
+		sourceColumn: TransactionType
+
+		annotation SummarizationSetBy = Automatic
+
+	column Price
+		dataType: double
+		formatString: \$#,0.00;-\$#,0.00;\$#,0.00
+		lineageTag: e0d9b3a4-a2e2-417a-9094-51856fca228e
+		summarizeBy: average
+		sourceColumn: Price
+
+		annotation SummarizationSetBy = Automatic
+
+	column Units
+		dataType: double
+		lineageTag: f3d5cd5f-aee1-4197-bcf9-bb8876e2229f
+		summarizeBy: sum
+		sourceColumn: Units
+
+		annotation SummarizationSetBy = Automatic
+
+	column TransactionAmount
+		dataType: double
+		formatString: \$#,0.00;-\$#,0.00;\$#,0.00
+		lineageTag: 05f1f114-6f7a-482e-b091-6358874d2380
+		summarizeBy: sum
+		sourceColumn: TransactionAmount
+
+		annotation SummarizationSetBy = Automatic
+
+	column Ticker
+		dataType: string
+		lineageTag: 2057e6da-1f2b-4315-8cd3-96105ee2a563
+		summarizeBy: none
+		sourceColumn: Ticker
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Ledger = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents(DataFolder & "Ledger.csv"),[Delimiter=",", Columns=6, Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Date", type date}, {"TransactionType", type text}, {"Price", type number}, {"Units", type number}, {"TransactionAmount", type number}, {"Ticker", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

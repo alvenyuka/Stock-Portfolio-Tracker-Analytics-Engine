@@ -1,0 +1,38 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.4.0/schema.json",
+  "name": "barReturnByStock",
+  "position": {
+    "x": 20,
+    "y": 540,
+    "z": 0,
+    "width": 1240,
+    "height": 160,
+    "tabOrder": 6
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": { "Column": { "Expression": { "SourceRef": { "Entity": "Holdings" } }, "Property": "Ticker" } },
+              "queryRef": "Holdings.Ticker",
+              "nativeQueryRef": "Ticker"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": { "Column": { "Expression": { "SourceRef": { "Entity": "Holdings" } }, "Property": "ReturnPct" } },
+              "queryRef": "Holdings.ReturnPct",
+              "nativeQueryRef": "Return %"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {}
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.4.0/schema.json",
+  "name": "donutSectorAllocation",
+  "position": {
+    "x": 660,
+    "y": 140,
+    "z": 0,
+    "width": 600,
+    "height": 380,
+    "tabOrder": 5
+  },
+  "visual": {
+    "visualType": "donutChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": { "Column": { "Expression": { "SourceRef": { "Entity": "SectorAllocation" } }, "Property": "Industry" } },
+              "queryRef": "SectorAllocation.Industry",
+              "nativeQueryRef": "Industry"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": { "Column": { "Expression": { "SourceRef": { "Entity": "SectorAllocation" } }, "Property": "MarketValue" } },
+              "queryRef": "SectorAllocation.MarketValue",
+              "nativeQueryRef": "Market Value"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {}
+  }
+}

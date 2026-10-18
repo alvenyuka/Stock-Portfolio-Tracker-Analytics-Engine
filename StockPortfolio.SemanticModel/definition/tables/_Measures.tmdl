@@ -1,0 +1,59 @@
+table _Measures
+	lineageTag: b0842f86-2bd3-4ff1-851a-88f680353dc9
+
+	measure 'Total Market Value' = SUM(Holdings[MarketValue])
+		formatString: \$#,0;-\$#,0;\$#,0
+		lineageTag: 1ee3617a-d70a-4a39-ae29-ef1129565416
+
+	measure 'Total Cost Basis' = SUM(Holdings[CostBasis])
+		formatString: \$#,0;-\$#,0;\$#,0
+		lineageTag: d239ede2-e1ef-41a7-b3e1-8d3d28d93534
+
+	measure 'Total Gain/Loss' = [Total Market Value] - [Total Cost Basis]
+		formatString: \$#,0;-\$#,0;\$#,0
+		lineageTag: 5a8a615b-755f-41c0-8b3b-ec66f0a45de0
+
+	measure 'Total Return %' = DIVIDE([Total Gain/Loss], [Total Cost Basis])
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: bc4ad15b-d2f4-434c-9426-e2ec954f4a3b
+
+	measure 'Holdings Count' = DISTINCTCOUNT(Holdings[Ticker])
+		formatString: 0
+		lineageTag: 2e0576b5-c089-4091-8d3c-72adad0a6afe
+
+	measure 'Strong Signal Count' = CALCULATE(DISTINCTCOUNT(Holdings[Ticker]), Holdings[Signal] = "STRONG")
+		formatString: 0
+		lineageTag: ec949989-5d24-4891-8bd6-c53dfc7cd67f
+
+	measure 'Review Signal Count' = CALCULATE(DISTINCTCOUNT(Holdings[Ticker]), Holdings[Signal] = "REVIEW")
+		formatString: 0
+		lineageTag: 78c1cb09-f3d8-411a-9480-d02f21e44348
+
+	measure 'Total Transactions' = COUNTROWS(Ledger)
+		formatString: 0
+		lineageTag: efafaca9-60b6-489f-98d3-8626279b3bb4
+
+	measure 'Portfolio Value' = MAX(KPIs[PortfolioValue])
+		formatString: \$#,0;-\$#,0;\$#,0
+		lineageTag: e0977444-e860-46bb-8196-fa0a13126a79
+
+	measure 'Sharpe Ratio' = MAX(KPIs[SharpeRatio])
+		formatString: 0.00
+		lineageTag: abc86f2a-6c51-4859-8bc4-0565aa29123e
+
+	measure 'Annual Return (IRR)' = MAX(KPIs[AnnReturnIRR])
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: cf2af890-6a04-47cd-9133-140833da2695
+
+	measure 'Portfolio Total Return %' = MAX(KPIs[TotalReturnPct])
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 8b37b000-caed-4bba-83de-1972d2faf5cc
+
+	partition _Measures = m
+		mode: import
+		source =
+				let
+				    Source = #table({}, {})
+				in
+				    Source
+

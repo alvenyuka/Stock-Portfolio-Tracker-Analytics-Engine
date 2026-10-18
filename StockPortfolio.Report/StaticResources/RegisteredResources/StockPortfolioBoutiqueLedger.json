@@ -1,0 +1,14 @@
+{
+  "name": "Stock Portfolio — Boutique Ledger",
+  "dataColors": ["#B37903", "#0C9CBB", "#786905", "#BC378D", "#7E77FA", "#0DA572", "#057BBC", "#C9305D"],
+  "background": "#1D1A16",
+  "foreground": "#FCF8F6",
+  "tableAccent": "#B37903",
+  "good": "#0CA30C",
+  "bad": "#D03B3B",
+  "neutral": "#FAB219",
+  "maximum": "#B37903",
+  "center": "#6B5345",
+  "minimum": "#BEB3AE",
+  "null": "#513A2D"
+}
