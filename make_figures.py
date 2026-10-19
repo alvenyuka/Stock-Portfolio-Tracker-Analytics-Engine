@@ -29,16 +29,34 @@ def main() -> None:
     wb = load(DEFAULT)
     spark, ps, an = wb["Price History"], wb["Portfolio Series"], wb["Analytics"]
 
-    dates = [as_date(v) for v in (spark.cell(2, c).value for c in range(2, spark.max_column + 1)) if num(v) is not None]
-    n = len(dates)
-    value = [num(ps.cell(5, c).value) for c in range(2, 2 + n)]
-    spy = [num(ps.cell(7, c).value) for c in range(2, 2 + n)]
+    # Row 2 of Price History holds the dates, starting in column B.
+    dates = []
+    for col in range(2, spark.max_column + 1):
+        cell_value = spark.cell(2, col).value
+        if num(cell_value) is not None:
+            dates.append(as_date(cell_value))
+    ndays = len(dates)
+
+    # Portfolio Series: row 5 is the value of today's holdings, row 7 is SPY.
+    value = []
+    spy = []
+    for col in range(2, 2 + ndays):
+        value.append(num(ps.cell(5, col).value))
+        spy.append(num(ps.cell(7, col).value))
     OUT.mkdir(exist_ok=True)
 
+    # index both lines to 100 on the first day so they can share one axis
+    portfolio_index = []
+    spy_index = []
+    for v in value:
+        portfolio_index.append(v / value[0] * 100)
+    for v in spy:
+        spy_index.append(v / spy[0] * 100)
+
     fig, ax = plt.subplots(figsize=(8.5, 4.2))
-    ax.plot(dates, [v / value[0] * 100 for v in value], color=BLUE, lw=2,
+    ax.plot(dates, portfolio_index, color=BLUE, lw=2,
             label=f"Current holdings ({value[-1] / value[0] - 1:+.1%})")
-    ax.plot(dates, [v / spy[0] * 100 for v in spy], color=GREY, lw=2, label=f"SPY ({spy[-1] / spy[0] - 1:+.1%})")
+    ax.plot(dates, spy_index, color=GREY, lw=2, label=f"SPY ({spy[-1] / spy[0] - 1:+.1%})")
     ax.set_ylabel("Indexed to 100")
     ax.set_title(f"12 months to {dates[-1]:%d %b %Y}: current holdings against SPY", loc="left", fontsize=11, color=INK)
     ax.legend(frameon=False, loc="upper left")
@@ -48,15 +66,33 @@ def main() -> None:
     fig.savefig(OUT / "portfolio_vs_spy.png", dpi=150)
     plt.close(fig)
 
-    sectors = [(an.cell(r, 1).value, num(an.cell(r, 2).value)) for r in range(SECTOR_FIRST, SECTOR_LAST + 1)
-               if an.cell(r, 1).value and num(an.cell(r, 2).value) is not None]
-    sectors.sort(key=lambda t: t[1])
-    total = sum(v for _, v in sectors)
+    # (sector name, market value), smallest first so the largest bar is at the top
+    sectors = []
+    for row in range(SECTOR_FIRST, SECTOR_LAST + 1):
+        name = an.cell(row, 1).value
+        market_value = num(an.cell(row, 2).value)
+        if name and market_value is not None:
+            sectors.append((name, market_value))
+    sectors.sort(key=lambda sector: sector[1])
+
+    names = []
+    thousands = []
+    values = []
+    for name, market_value in sectors:
+        names.append(name)
+        thousands.append(market_value / 1000)
+        values.append(market_value)
+    total = sum(values)
+    largest = values[-1]
+    colours = []
+    for market_value in values:
+        colours.append(BLUE if market_value == largest else GREY)    # highlight the largest sector
+
     fig, ax = plt.subplots(figsize=(8.5, 4.6))
-    bars = ax.barh([s for s, _ in sectors], [v / 1000 for _, v in sectors],
-                   color=[BLUE if v == sectors[-1][1] else GREY for _, v in sectors])
-    for bar, (_, v) in zip(bars, sectors):
-        ax.text(bar.get_width() + 1, bar.get_y() + bar.get_height() / 2, f"{v / total:.1%}", va="center", fontsize=9)
+    bars = ax.barh(names, thousands, color=colours)
+    for bar, market_value in zip(bars, values):
+        ax.text(bar.get_width() + 1, bar.get_y() + bar.get_height() / 2, f"{market_value / total:.1%}",
+                va="center", fontsize=9)
     ax.set_xlabel("Market value, $ thousands")
     ax.set_title(f"Market value by sector (total ${total:,.0f})", loc="left", fontsize=11, color=INK)
     ax.spines[["top", "right"]].set_visible(False)

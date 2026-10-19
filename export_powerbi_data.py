@@ -20,6 +20,7 @@ HOLDING_COLS = {                                  # Dashboard column -> CSV colu
     8: "TodaysChangePct", 9: "GainLoss", 11: "ReturnPct", 12: "WeightPct", 14: "CostBasis", 15: "AvgBuyPrice",
     16: "PriceToCost", 17: "AnnReturn", 18: "RiskScore", 19: "Signal",
 }
+MARKET_VALUE_COL = 6                                # Dashboard column F
 SECTOR_FIRST_ROW = 30                             # Dashboard sector allocation, columns B to E
 KPI_CELLS = {                                     # KPI column -> Dashboard cell
     "PortfolioValue": "B3", "CostBasis": "D3", "UnrealisedPnL": "E3", "TotalReturnPct": "F3",
@@ -38,6 +39,7 @@ def clean(v):
 
 
 def write(name, header, rows):
+    """Write one CSV into powerbi-data/: the header row, then the data rows."""
     with open(OUT / name, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(header)
@@ -51,8 +53,11 @@ def main(path=vp.DEFAULT):
 
     holdings = []
     for r in range(HOLDING_FIRST_ROW, HOLDING_LAST_ROW + 1):
-        row = [clean(dash.cell(r, c).value) for c in HOLDING_COLS]
-        if row[0] is None:
+        row = []
+        for col in HOLDING_COLS:
+            row.append(clean(dash.cell(r, col).value))
+        ticker = row[0]    # Ticker is the first CSV column
+        if ticker is None:
             sys.exit(f"Dashboard row {r} has no ticker in column M; the holdings table has moved")
         holdings.append(row)
     write("Holdings.csv", list(HOLDING_COLS.values()), holdings)
@@ -60,18 +65,27 @@ def main(path=vp.DEFAULT):
     sectors = []
     r = SECTOR_FIRST_ROW
     while dash.cell(r, 2).value not in (None, ""):
-        sectors.append([dash.cell(r, c).value for c in (2, 3, 4, 5)])
+        sectors.append([dash.cell(r, 2).value, dash.cell(r, 3).value,
+                        dash.cell(r, 4).value, dash.cell(r, 5).value])
         r += 1
     write("SectorAllocation.csv", ["Industry", "MarketValue", "WeightPct", "HHIContrib"], sectors)
 
     trades = vp.read_ledger(wb["Ledger"])
-    write("Ledger.csv", ["Date", "TransactionType", "Price", "Units", "TransactionAmount", "Ticker"],
-          [[t["date"].isoformat(), t["kind"].title(), t["price"], t["units"], t["amount"], t["ticker"]]
-           for t in trades])
+    ledger_rows = []
+    for t in trades:
+        ledger_rows.append([t["date"].isoformat(), t["kind"].title(), t["price"], t["units"],
+                            t["amount"], t["ticker"]])
+    write("Ledger.csv", ["Date", "TransactionType", "Price", "Units", "TransactionAmount", "Ticker"], ledger_rows)
 
-    write("KPIs.csv", list(KPI_CELLS), [[clean(dash[c].value) for c in KPI_CELLS.values()]])
+    kpi_row = []
+    for cell in KPI_CELLS.values():
+        kpi_row.append(clean(dash[cell].value))
+    write("KPIs.csv", list(KPI_CELLS), [kpi_row])
 
-    mv = sum(h[4] for h in holdings)
+    market_values = []
+    for r in range(HOLDING_FIRST_ROW, HOLDING_LAST_ROW + 1):
+        market_values.append(clean(dash.cell(r, MARKET_VALUE_COL).value))
+    mv = sum(market_values)
     if abs(mv - dash["B3"].value) > 0.01:
         sys.exit(f"holdings sum to {mv:,.2f} but the dashboard reports {dash['B3'].value:,.2f}")
     print(f"wrote {OUT.name}/: {len(holdings)} holdings, {len(sectors)} sectors, {len(trades)} trades; "

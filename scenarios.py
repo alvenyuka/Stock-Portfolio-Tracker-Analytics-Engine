@@ -68,63 +68,114 @@ def read_holdings(wb) -> tuple[list[dict], list[float], float]:
     """
     dash, spark, ps = wb["Dashboard"], wb["Price History"], wb["Portfolio Series"]
     pos = positions(read_ledger(wb["Ledger"]))
-    ndays = sum(1 for c in range(2, spark.max_column + 1) if num(spark.cell(2, c).value) is not None)
+
+    # Count the days that have a date in row 2 of Price History (columns B onwards).
+    ndays = 0
+    for col in range(2, spark.max_column + 1):
+        if num(spark.cell(2, col).value) is not None:
+            ndays += 1
+
     holdings = []
-    for i, r in enumerate(range(DASH_FIRST, DASH_LAST + 1)):
-        tk = dash.cell(r, 13).value
-        closes = [num(spark.cell(SPARK_FIRST + i, c).value) for c in range(2, 2 + ndays)]
+    for i, dash_row in enumerate(range(DASH_FIRST, DASH_LAST + 1)):
+        ticker = dash.cell(dash_row, 13).value
+        closes = []
+        for col in range(2, 2 + ndays):
+            closes.append(num(spark.cell(SPARK_FIRST + i, col).value))
+        if closes[0] is None:
+            closes = None    # no price history for this holding, so it stays out of the back-cast
         holdings.append({
-            "ticker": tk,
-            "sector": dash.cell(r, 3).value,
-            "units": pos[tk]["net"],
-            "price": num(dash.cell(r, 5).value),
-            "avg_cost": pos[tk]["avg"],
-            "closes": closes if closes[0] is not None else None,
+            "ticker": ticker,
+            "sector": dash.cell(dash_row, 3).value,
+            "units": pos[ticker]["net_units"],
+            "price": num(dash.cell(dash_row, 5).value),
+            "avg_cost": pos[ticker]["avg_cost"],
+            "closes": closes,
         })
-    spy = [num(ps.cell(7, c).value) for c in range(2, 2 + ndays)]
+
+    spy = []
+    for col in range(2, 2 + ndays):
+        spy.append(num(ps.cell(7, col).value))
     shock = num(wb["Risk Analytics"][MONEY["shock"]].value)
     return holdings, spy, shock
 
 
 def profile(holdings: list[dict], units: dict, spy: list[float], shock: float) -> dict:
     """Concentration and money-at-risk figures for one set of units (ticker -> units)."""
-    mv = {h["ticker"]: units[h["ticker"]] * h["price"] for h in holdings}
-    total = sum(mv.values())
-    weights = {t: v / total for t, v in mv.items()}
-    sectors = {}
+    # market value of each holding, and of each sector
+    market_value = {}
+    sector_value = {}
     for h in holdings:
-        sectors[h["sector"]] = sectors.get(h["sector"], 0.0) + mv[h["ticker"]]
-    top_tk = max(mv, key=mv.get)
-    top_sector = max(sectors, key=sectors.get)
+        value = units[h["ticker"]] * h["price"]
+        market_value[h["ticker"]] = value
+        sector_value[h["sector"]] = sector_value.get(h["sector"], 0.0) + value
+    total = sum(market_value.values())
 
-    covered = [h for h in holdings if h["closes"] is not None]
-    value = [sum(units[h["ticker"]] * h["closes"][k] for h in covered) for k in range(len(spy))]
-    rets = [value[k] / value[k - 1] - 1 for k in range(1, len(value))]
-    srets = [spy[k] / spy[k - 1] - 1 for k in range(1, len(spy))]
-    peak, mdd, mdd_usd = value[0], 0.0, 0.0
-    for v in value:
+    weights = {}
+    for ticker, value in market_value.items():
+        weights[ticker] = value / total
+    top_ticker = max(market_value, key=market_value.get)
+    top_sector = max(sector_value, key=sector_value.get)
+    squared_weights = []
+    for w in weights.values():
+        squared_weights.append(w * w)
+    sum_squared_weights = sum(squared_weights)
+
+    # 12-month back-cast: these units valued at each day's close (holdings with no history are left out)
+    covered = []
+    for h in holdings:
+        if h["closes"] is not None:
+            covered.append(h)
+    daily_value = []
+    for day in range(len(spy)):
+        holding_values = []
+        for h in covered:
+            holding_values.append(units[h["ticker"]] * h["closes"][day])
+        daily_value.append(sum(holding_values))
+
+    returns = []
+    for day in range(1, len(daily_value)):
+        returns.append(daily_value[day] / daily_value[day - 1] - 1)
+    spy_returns = []
+    for day in range(1, len(spy)):
+        spy_returns.append(spy[day] / spy[day - 1] - 1)
+
+    # max drawdown: the worst fall from the highest value seen so far
+    peak = daily_value[0]
+    max_drawdown = 0.0
+    max_drawdown_usd = 0.0
+    for v in daily_value:
         peak = max(peak, v)
-        mdd = min(mdd, v / peak - 1)
-        mdd_usd = min(mdd_usd, v - peak)
-    mr, ms = statistics.fmean(rets), statistics.fmean(srets)
-    beta = sum((a - mr) * (b - ms) for a, b in zip(rets, srets)) / sum((b - ms) ** 2 for b in srets)
+        max_drawdown = min(max_drawdown, v / peak - 1)
+        max_drawdown_usd = min(max_drawdown_usd, v - peak)
+
+    # beta = covariance of the portfolio with SPY / variance of SPY
+    mean_portfolio = statistics.fmean(returns)
+    mean_spy = statistics.fmean(spy_returns)
+    covariances = []
+    for portfolio_return, spy_return in zip(returns, spy_returns):
+        covariances.append((portfolio_return - mean_portfolio) * (spy_return - mean_spy))
+    spy_variances = []
+    for spy_return in spy_returns:
+        spy_variances.append((spy_return - mean_spy) ** 2)
+    beta = sum(covariances) / sum(spy_variances)
+
     return {
         "market_value": total,
-        "largest_holding": top_tk,
-        "largest_holding_share": weights[top_tk],
+        "largest_holding": top_ticker,
+        "largest_holding_share": weights[top_ticker],
         "nvidia_share": weights.get(NVIDIA, 0.0),
         "largest_sector": top_sector,
-        "largest_sector_share": sectors[top_sector] / total,
-        "semiconductor_share": sectors.get(SEMIS, 0.0) / total,
-        "effective_holdings": 1 / sum(w * w for w in weights.values()),
-        "sector_shock_loss": shock * sectors[top_sector],
-        "semiconductor_shock_loss": shock * sectors.get(SEMIS, 0.0),
-        "volatility": statistics.stdev(rets) * math.sqrt(TRADING_DAYS),
-        "max_drawdown": mdd,
-        "max_drawdown_usd": mdd_usd,
-        "var_95_1d_usd": -percentile_inc(rets, 0.05) * total,
+        "largest_sector_share": sector_value[top_sector] / total,
+        "semiconductor_share": sector_value.get(SEMIS, 0.0) / total,
+        "effective_holdings": 1 / sum_squared_weights,
+        "sector_shock_loss": shock * sector_value[top_sector],
+        "semiconductor_shock_loss": shock * sector_value.get(SEMIS, 0.0),
+        "volatility": statistics.stdev(returns) * math.sqrt(TRADING_DAYS),
+        "max_drawdown": max_drawdown,
+        "max_drawdown_usd": max_drawdown_usd,
+        "var_95_1d_usd": -percentile_inc(returns, 0.05) * total,
         "beta_vs_spy": beta,
-        "return_12m_backcast": value[-1] / value[0] - 1,
+        "return_12m_backcast": daily_value[-1] / daily_value[0] - 1,
     }
 
 
@@ -137,21 +188,36 @@ def cap_weights(values: dict, cap: float, only: set | None = None) -> dict:
     if only is None and cap * len(values) < 1:
         raise ValueError(f"a {cap:.0%} cap cannot hold for {len(values)} holdings: they must sum to 100%")
     total = sum(values.values())
+    limit = cap * total
     target = dict(values)
     capped = set()
+
     while True:
-        over = [t for t, v in target.items() if (only is None or t in only) and t not in capped
-                and v > cap * total + 1e-9]
+        # holdings still above the limit (the 1e-9 absorbs floating-point noise)
+        over = []
+        for ticker, value in target.items():
+            in_scope = only is None or ticker in only
+            if in_scope and ticker not in capped and value > limit + 1e-9:
+                over.append(ticker)
         if not over:
             return target
-        for t in over:
-            target[t] = cap * total
-            capped.add(t)
-        free = [t for t in target if t not in capped]
+
+        for ticker in over:
+            target[ticker] = limit
+            capped.add(ticker)
+
+        # give the freed value to the holdings that are not capped, in proportion to their value
+        free = []
+        for ticker in target:
+            if ticker not in capped:
+                free.append(ticker)
         excess = total - sum(target.values())
-        base = sum(target[t] for t in free)
-        for t in free:
-            target[t] += excess * target[t] / base
+        free_values = []
+        for ticker in free:
+            free_values.append(target[ticker])
+        free_total = sum(free_values)
+        for ticker in free:
+            target[ticker] += excess * target[ticker] / free_total
 
 
 def cap_group(values: dict, group: set, cap: float) -> dict:
@@ -161,13 +227,25 @@ def cap_group(values: dict, group: set, cap: float) -> dict:
     spread over the other holdings in proportion to their value.
     """
     total = sum(values.values())
-    in_group = sum(v for t, v in values.items() if t in group)
-    if in_group <= cap * total:
+    limit = cap * total
+    group_values = []
+    for ticker, value in values.items():
+        if ticker in group:
+            group_values.append(value)
+    group_value = sum(group_values)
+    if group_value <= limit:
         return dict(values)
-    scale = cap * total / in_group
-    others = total - in_group
-    freed = in_group - cap * total
-    return {t: (v * scale if t in group else v + freed * v / others) for t, v in values.items()}
+
+    scale = limit / group_value
+    others_value = total - group_value
+    freed = group_value - limit
+    target = {}
+    for ticker, value in values.items():
+        if ticker in group:
+            target[ticker] = value * scale
+        else:
+            target[ticker] = value + freed * value / others_value
+    return target
 
 
 def trade_costs(holdings: list[dict], target: dict) -> dict:
@@ -192,21 +270,34 @@ def run(path: Path = DEFAULT) -> dict:
     """Profile the current portfolio and the three rebalancing policies."""
     wb = load(path)
     holdings, spy, shock = read_holdings(wb)
-    values = {h["ticker"]: h["units"] * h["price"] for h in holdings}
-    semis = {h["ticker"] for h in holdings if h["sector"] == SEMIS}
+
+    values = {}
+    semis = set()
+    for h in holdings:
+        values[h["ticker"]] = h["units"] * h["price"]
+        if h["sector"] == SEMIS:
+            semis.add(h["ticker"])
+
+    # each policy is a target market value per ticker
     policies = {
         "Current portfolio": values,
         "NVIDIA capped at 25%": cap_weights(values, 0.25, only={NVIDIA}),
         "No holding above 20%": cap_weights(values, 0.20),
         "Semiconductors capped at 40%": cap_group(values, semis, 0.40),
     }
-    out = {"assumptions": {"tax_rate_on_net_realised_gains": TAX_RATE, "trading_cost_share_of_value_traded": TRADING_COST,
-                           "sector_shock": shock},
-           "scenarios": {}}
+
+    result = {"assumptions": {"tax_rate_on_net_realised_gains": TAX_RATE,
+                              "trading_cost_share_of_value_traded": TRADING_COST,
+                              "sector_shock": shock},
+              "scenarios": {}}
     for name, target in policies.items():
-        units = {h["ticker"]: target[h["ticker"]] / h["price"] for h in holdings}
-        out["scenarios"][name] = {**profile(holdings, units, spy, shock), **trade_costs(holdings, target)}
-    return out
+        units = {}
+        for h in holdings:
+            units[h["ticker"]] = target[h["ticker"]] / h["price"]
+        scenario = profile(holdings, units, spy, shock)
+        scenario.update(trade_costs(holdings, target))
+        result["scenarios"][name] = scenario
+    return result
 
 
 def plot(result: dict, path: Path) -> None:
@@ -216,17 +307,32 @@ def plot(result: dict, path: Path) -> None:
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    names = list(result["scenarios"])
-    s = result["scenarios"]
-    series = [("Loss if semiconductors fell 30%", [s[n]["semiconductor_shock_loss"] for n in names], "#c0392b"),
-              ("Worst 12-month drawdown", [-s[n]["max_drawdown_usd"] for n in names], "#dd8452"),
-              ("1-day VaR (95%)", [s[n]["var_95_1d_usd"] for n in names], "#4c72b0"),
-              ("One-off cost: tax + trading", [s[n]["total_cost"] for n in names], "#7f7f7f")]
+    scenarios = result["scenarios"]
+    names = list(scenarios)
+
+    def column(key, sign=1):
+        """One figure under each policy (sign=-1 turns a negative drawdown into a positive loss)."""
+        figures = []
+        for name in names:
+            figures.append(sign * scenarios[name][key])
+        return figures
+
+    # (legend label, values under each policy, colour)
+    series = [("Loss if semiconductors fell 30%", column("semiconductor_shock_loss"), "#c0392b"),
+              ("Worst 12-month drawdown", column("max_drawdown_usd", sign=-1), "#dd8452"),
+              ("1-day VaR (95%)", column("var_95_1d_usd"), "#4c72b0"),
+              ("One-off cost: tax + trading", column("total_cost"), "#7f7f7f")]
     fig, ax = plt.subplots(figsize=(9.5, 4.6))
     width = 0.2
     for i, (label, vals, colour) in enumerate(series):
-        xs = [k + (i - 1.5) * width for k in range(len(names))]
-        ax.bar(xs, [v / 1000 for v in vals], width, label=label, color=colour)
+        # four bars per policy, centred on the policy's tick
+        xs = []
+        for k in range(len(names)):
+            xs.append(k + (i - 1.5) * width)
+        thousands = []
+        for v in vals:
+            thousands.append(v / 1000)
+        ax.bar(xs, thousands, width, label=label, color=colour)
     ax.set_xticks(range(len(names)))
     ax.set_xticklabels(names, fontsize=9)
     ax.set_ylabel("US$ thousands")
@@ -243,26 +349,37 @@ def main(argv) -> int:
     """Run the scenarios, print the comparison and write the JSON and chart."""
     path = Path(argv[1]) if len(argv) > 1 else DEFAULT
     result = run(path)
-    rows = [("market value", "market_value", "{:,.0f}"),
-            ("largest holding share", "largest_holding_share", "{:.1%}"),
-            ("semiconductor share", "semiconductor_share", "{:.1%}"),
-            ("effective number of holdings", "effective_holdings", "{:.1f}"),
-            ("loss if semiconductors fell 30%", "semiconductor_shock_loss", "{:,.0f}"),
-            ("1-day VaR 95%", "var_95_1d_usd", "{:,.0f}"),
-            ("worst 12-month drawdown", "max_drawdown_usd", "{:,.0f}"),
-            ("volatility (12m back-cast)", "volatility", "{:.1%}"),
-            ("beta vs SPY", "beta_vs_spy", "{:.2f}"),
-            ("12-month return (back-cast)", "return_12m_backcast", "{:.1%}"),
-            ("value sold", "sold", "{:,.0f}"),
-            ("tax on realised gains", "tax", "{:,.0f}"),
-            ("trading cost", "trading_cost", "{:,.0f}")]
+    # (row label, key in each scenario, number format)
+    table_rows = [("market value", "market_value", "{:,.0f}"),
+                  ("largest holding share", "largest_holding_share", "{:.1%}"),
+                  ("semiconductor share", "semiconductor_share", "{:.1%}"),
+                  ("effective number of holdings", "effective_holdings", "{:.1f}"),
+                  ("loss if semiconductors fell 30%", "semiconductor_shock_loss", "{:,.0f}"),
+                  ("1-day VaR 95%", "var_95_1d_usd", "{:,.0f}"),
+                  ("worst 12-month drawdown", "max_drawdown_usd", "{:,.0f}"),
+                  ("volatility (12m back-cast)", "volatility", "{:.1%}"),
+                  ("beta vs SPY", "beta_vs_spy", "{:.2f}"),
+                  ("12-month return (back-cast)", "return_12m_backcast", "{:.1%}"),
+                  ("value sold", "sold", "{:,.0f}"),
+                  ("tax on realised gains", "tax", "{:,.0f}"),
+                  ("trading cost", "trading_cost", "{:,.0f}")]
     names = list(result["scenarios"])
-    print(f"{'':34s}" + "".join(f"{n[:22]:>24s}" for n in names))
-    for label, key, fmt in rows:
-        print(f"{label:34s}" + "".join(f"{fmt.format(result['scenarios'][n][key]):>24s}" for n in names))
-    a = result["assumptions"]
-    print(f"\nAssumptions: tax {a['tax_rate_on_net_realised_gains']:.0%} on net realised gains, "
-          f"trading cost {a['trading_cost_share_of_value_traded']:.2%} of value traded, sector shock {a['sector_shock']:.0%}.")
+
+    header = f"{'':34s}"
+    for name in names:
+        header += f"{name[:22]:>24s}"
+    print(header)
+    for label, key, number_format in table_rows:
+        line = f"{label:34s}"
+        for name in names:
+            cell = number_format.format(result["scenarios"][name][key])
+            line += f"{cell:>24s}"
+        print(line)
+
+    assumptions = result["assumptions"]
+    print(f"\nAssumptions: tax {assumptions['tax_rate_on_net_realised_gains']:.0%} on net realised gains, "
+          f"trading cost {assumptions['trading_cost_share_of_value_traded']:.2%} of value traded, "
+          f"sector shock {assumptions['sector_shock']:.0%}.")
     (ROOT / "outputs").mkdir(exist_ok=True)
     (ROOT / "outputs" / "scenarios.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     (ROOT / "figures").mkdir(exist_ok=True)
